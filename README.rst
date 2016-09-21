@@ -40,4 +40,4 @@ References
 .. [3] Schreiber, E., and H-J. Fitting. "Monte Carlo simulation of secondary electron emission from the insulator SiO 2." Journal of Electron Spectroscopy and Related Phenomena 124.1 (2002): 25-37.
 
 .. _`adus_v1_0.tar.gz`: http://www.cpc.cs.qub.ac.uk/summaries/ADUS_v1_0.html
-.. _`pyElsepa`: http://github.com/eScatter/pyelsepa.git@develop
+.. _`pyElsepa`: http://github.com/eScatter/pyelsepa.git
