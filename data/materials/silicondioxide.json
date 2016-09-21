@@ -1,0 +1,15 @@
+{
+    "name":      "silicondioxide",
+    "rho_m":     "2.648 g/cm³",
+    "fermi":     "0 eV",
+    "work_func": "0.9 eV",
+    "band_gap":  "9 eV",
+    "lattice":   "5.45 Å",
+    "c_s":       "3.560 km/s",
+    "eps_ac":    "2.6 eV",
+    "elf_file":  "data/elf/df_SiO2.dat",
+    "elements":  {
+        "Si": { "count": 1, "Z": 14, "M": "28.085 g/mol"},
+        "O":  { "count": 2, "Z":  8, "M": "15.999 g/mol"}
+    }
+}

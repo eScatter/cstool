@@ -1,0 +1,13 @@
+{
+    "name":      "copper",
+    "rho_m":     "8.96 g/cm³",
+    "fermi":     "7.0 eV",
+    "work_func": "4.53 eV",
+    "lattice":   "3.610 Å",
+    "c_s":       "4.6 km/s",
+    "eps_ac":    "8.92 eV",
+    "elf_file":  "data/elf/df_Cu.dat",
+    "elements": {
+        "Cu": {"count": 1, "Z": 29, "M": "63.546 g/mol"}
+    }
+}
