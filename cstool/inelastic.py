@@ -88,7 +88,32 @@ def loglog_interpolate(x_i, y_i):
     return f
 
 
+def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
+    """Returns a function giving differential cross-sections for
+    inelastic scattering, based on the data in the ELF files and
+    an extrapolation function `L`, for which there are three options:
+    `Kieft`, `Ashley_w_ex` and `Ashley_wo_ex`. The ELF data is
+    interpolated on a log-log scale using linear interpolation."""
+    assert L_method in methods, \
+        "L_method should be in {}".format(list(methods.keys()))
+
+    L = methods[L_method]
+
+    elf_data = read_elf_data(s.elf_file)
+    elf = loglog_interpolate(elf_data['w0'], elf_data['elf'])
+    mc2 = units.m_e * units.c**2
+
+    def cs(K, w):
+        return elf(w) * L(K, w, s.fermi) \
+            / (pi * units.a_0 * s.rho_n) \
+            / (1 - 1 / (K/mc2 + 1)**2) / mc2
+
+    return cs
+
+
 def inelastic_cs(s: Settings, L_method: str='Kieft', K_bounds=None):
+    """Returns a `DCS` frame on a 1024² grid assuming some
+    sensible bounds."""
     assert L_method in methods, \
         "L_method should be in {}".format(list(methods.keys()))
 
@@ -98,11 +123,6 @@ def inelastic_cs(s: Settings, L_method: str='Kieft', K_bounds=None):
     K_bounds = K_bounds or (s.fermi + 0.1 * units.eV, 1e4 * units.eV)
     print("Bounds: {k[0].magnitude:.2e} - {k[1].magnitude:.2e}"
           " {k[0].units:~P}".format(k=K_bounds))
-
-    L = methods[L_method]
-
-    elf_data = read_elf_data(s.elf_file)
-    elf = loglog_interpolate(elf_data['w0'], elf_data['elf'])
 
     K = np.logspace(
         log10(K_bounds[0].to('eV').magnitude),
@@ -116,10 +136,7 @@ def inelastic_cs(s: Settings, L_method: str='Kieft', K_bounds=None):
         log10(elf_data['w0'][0].to('eV').magnitude),
         log10(K_bounds[1].to('eV').magnitude / 2), 1024) * units.eV
 
-    mc2 = units.m_e * units.c**2
-    dcs = elf(w) * L(K[:, None], w, s.fermi) \
-        / (pi * units.a_0 * s.rho_n) \
-        / (1 - 1 / (K[:, None]/mc2 + 1)**2) / mc2
+    dcs = inelastic_cs_fn(s, L_method)(K[:, None], w)
 
     return DCS(K, w, dcs)
 
