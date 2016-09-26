@@ -22,7 +22,7 @@ def shift(dE):
 
 
 if __name__ == "__main__":
-    s = read_input("./materials/gold.json")
+    s = read_input("./data/materials/silicondioxide.json")
 
     print(pprint_settings(cstool_model, s))
     print()
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     print("Computing Mott cross-sections using ELSEPA.")
 
     e = np.logspace(1, 5, 145) * units.eV
-    f_mcs = s_mott_cs(s, e)
+    f_mcs = s_mott_cs(s, e, split=12, mabs=False)
 
     with NCDisplay() as display:
         mcs = run_parallel_opt(

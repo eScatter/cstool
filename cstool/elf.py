@@ -13,14 +13,14 @@ def read_elf_data(filename):
 
     # extract meta-data
     first_line = next(lines)
-    meta_data = list(map(int, first_line.split()))
+    meta_data = list(map(float, first_line.split()))
 
     # extract data
     parsed_lines = map(lambda l: tuple(map(float, l.split())), lines)
     data = takewhile(lambda v: len(v) > 0 and v[0] > 0, parsed_lines)
 
     data_array = np.array(list(data),
-                          dtype=[('w0', float), ('cs', float)])
+                          dtype=[('w0', float), ('elf', float)])
     return DataFrame(data_array, units=['eV', ''], comments=meta_data)
 
 
