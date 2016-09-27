@@ -104,9 +104,13 @@ def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
     mc2 = units.m_e * units.c**2
 
     def cs(K, w):
-        return elf(w) * L(K, w, s.fermi) \
+        err = np.geterr()
+        np.seterr(all='ignore')
+        result = elf(w) * L(K, w, s.fermi) \
             / (pi * units.a_0 * s.rho_n) \
             / (1 - 1 / (K/mc2 + 1)**2) / mc2
+        np.seterr(**err)
+        return result
 
     return cs
 
@@ -127,10 +131,11 @@ def inelastic_cs(s: Settings, L_method: str='Kieft', K_bounds=None):
     K = np.logspace(
         log10(K_bounds[0].to('eV').magnitude),
         log10(K_bounds[1].to('eV').magnitude), 1024) * units.eV
-    w0_max = K/2
 
-    if L_method == 'Kieft':
-        w0_max -= s.fermi/2
+    # if L_method == 'Kieft':
+    #    w0_max = K - s.fermi
+    # else:
+    #    w0_max = K/2
 
     w = np.logspace(
         log10(elf_data['w0'][0].to('eV').magnitude),

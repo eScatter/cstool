@@ -4,6 +4,8 @@ from noodles.display import NCDisplay
 from cstool.parse_input import read_input, pprint_settings, cstool_model
 from cstool.mott import s_mott_cs
 from cstool.phonon import phonon_cs_fn
+from cstool.elf import read_elf_data
+from cstool.inelastic import inelastic_cs_fn
 
 from cslib.noodles import registry
 from cslib import units
@@ -11,6 +13,7 @@ from cslib.dataframe import DCS
 from cslib.numeric import log_interpolate
 
 import numpy as np
+from numpy import (log10)
 
 
 def shift(dE):
@@ -22,7 +25,7 @@ def shift(dE):
 
 
 if __name__ == "__main__":
-    s = read_input("./data/materials/silicondioxide.json")
+    s = read_input("./data/materials/pmma.json")
 
     print(pprint_settings(cstool_model, s))
     print()
@@ -48,6 +51,8 @@ if __name__ == "__main__":
     pcs = DCS.from_function(phonon_cs_fn(s), e[:, None], mcs.angle)
     pcs.save_gnuplot('{}_phonon.bin'.format(s.name))
 
+    print("Merging elastic scattering processes.")
+
     @shift(s.fermi)
     def elastic_cs_fn(E, a):
         return log_interpolate(
@@ -57,3 +62,15 @@ if __name__ == "__main__":
     e = np.logspace(-2, 5, 129) * units.eV
     ecs = DCS.from_function(elastic_cs_fn, e[:, None], mcs.angle)
     ecs.save_gnuplot('{}_ecs.bin'.format(s.name))
+
+    print("Reading inelastic scattering cross-sections.")
+    elf_data = read_elf_data(s.elf_file)
+    K_bounds = (s.fermi + 0.1 * units.eV, 1e4 * units.eV)
+    K = np.logspace(
+        log10(K_bounds[0].to('eV').magnitude),
+        log10(K_bounds[1].to('eV').magnitude), 1024) * units.eV
+    w = np.logspace(
+        log10(elf_data['w0'][0].to('eV').magnitude),
+        log10(K_bounds[1].to('eV').magnitude / 2), 1024) * units.eV
+    ics = DCS.from_function(inelastic_cs_fn(s), K[:, None], w)
+    ics.save_gnuplot('{}_ics.bin'.format(s.name))
