@@ -4,7 +4,7 @@ distribution functions (CDF⁻¹), and writes them in a format that the CUDA low
 energy electron scattering simulator understands.
 
 The C++ code does the following
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===============================
 
 1. Create a material object `mat` with fields
     `name`, `fermi`, `fermi+work_func`, `phonon_loss`, `number_density`.
@@ -20,7 +20,7 @@ The C++ code does the following
     for each table in TCS: -> (first: double, second: TCS)
         values_plus_B[first + B] = second
     set values_plus_B in material
-6. This adds the binding-energy that was subtracted from the same sample in
+   This adds the binding-energy that was subtracted from the same sample in
    the Python script. We use absolute values anyway, so we can skip this.
 
 7. Read the ELF file (now called `outer-shell`) again and read the first line
@@ -30,6 +30,58 @@ The C++ code does the following
 
 8. Some statistics are shown which we already know.
    The entire material is serialised.
+
+Computation of CDF⁻¹
+~~~~~~~~~~~~~~~~~~~~
+
+In general we have some integrant, for which we need to find the inverse
+cumulative function. Given a DCS, we define an integrant `DCS_int`, and solve
+like this:
+
+    cumulative_dcs(a) := integrate(lower_limit, a, DCS_int)
+    tcs = cumulative_dcs(upper_limit)
+    spec_tcs(log(K)) := log(tcs)
+    icdf(K, P) -> a | P == cumulative_dcs(a)/tcs
+
+We may do the inversion using Newton-Raphson method.
+
+`set_elastic_data(K, dcs(theta): f -> f)`
+-----------------------------------------
+    dcs_int(theta) := dcs(theta) 2 pi sin(theta)
+    cumulative_dcs(a) := integrate(0, a, dcs_int)
+    tcs = cumulative_dcs(pi) # compute total for normalisation
+    elastic_tcs(log(K)) := log(tcs)
+    icdf(K, P) -> theta | P == cumulative_dcs(theta)/tcs
+
+`set_inelastic_data(K, dcs(w_0): f -> f)`
+-----------------------------------------
+    # concerning integration range: 0 < w_0 < K
+    cumulative_dcs(a) := integrate(0, a, dcs)
+    tcs = cumulative_dcs(K)
+    inelastic_tcs(log(K)) := log(tcs)
+    icdf(K, P) -> w_0 | P == cumulative_dcs(w_0)/tcs
+
+`set_ionization_data(B, tcs(K): f -> f)`
+----------------------------------------
+    loglog_tcs_map(log(K)) := log(tcs(K))
+    ionization_tcs(B) := loglog_tcs_map
+
+The material class has some more helper functions:
+* ionization_energy(K, P) -> creates an ionization_map interpolating the
+    tables in ionization_tcs using the log of K, if K > B. Each cross-section
+    found is added to a running total tcs: ionization_map(tcs) = B. Then the
+    first binding energy for which P < tcs(B)/TCS. This is a weird way of choosing
+    a binding energy with a probability that scales with the associated cross-
+    section.
+
+* outer_shell_ionization_energy(w_0) ->
+    for each binding energy B
+        if B < 100 eV and w_0 > B
+            return B
+    return -1
+    
+Why the upper limit of 100 eV?
+
 
 Serialisation
 ~~~~~~~~~~~~~
