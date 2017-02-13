@@ -8,6 +8,6 @@
     "eps_ac":    "8.92 eV",
     "elf_file":  "data/elf/df_Au.dat",
     "elements": {
-        "Cu": {"count": 1, "Z": 79, "M": "196.97 g/mol"}
+        "Au": {"count": 1, "Z": 79, "M": "196.97 g/mol"}
     }
 }
