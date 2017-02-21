@@ -9,10 +9,17 @@ pmma = {
     "rho_m": "1.192 g/cm³",
     "fermi": "0 eV",
     "work_func": "2.5 eV",
+
+    "phonon_model": {
+        "model": "single",
+        "lattice": "5.43 Å",
+        "single": {
+            "c_s": "2750 m/s",
+            "eps_ac": "9.2 eV"
+            }
+        },
+
     "band_gap": "5.6 eV",
-    "lattice": "5.43 Å",
-    "c_s": "2750 m/s",
-    "eps_ac": "9.2 eV",
     "elf_file": "data/elf/df_PMMA.dat",
     "elements": {
         "H":  {"count": 8, "Z": 1, "M":  "1.008 g/mol"},

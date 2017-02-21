@@ -39,6 +39,7 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
     # Material related parameters. These will be moved to argument
     # relates to the bending of the dispersion relation towards the Brillouin
     # zone boundary (used in Eq. 3.112)
+    # TODO: make parameter.
     alpha_single_branch = 0. * units('m²/s')
     # TODO: make parameter. :param m_dos: density of state mass (kg)
     m_dos = 1 * units.m_e
@@ -113,7 +114,8 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
 
 def phonon_cs_fn(s: Settings):
     return phonon_crosssection(
-        s.eps_ac, s.c_s, s.M_tot, s.rho_m, s.lattice,
+        s.phonon_model.single.eps_ac, s.phonon_model.single.c_s,
+        s.M_tot, s.rho_m, s.phonon_model.lattice,
         interpolate=log_interpolate)  # , h=lambda x: x)
 
 
