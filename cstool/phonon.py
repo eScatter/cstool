@@ -36,17 +36,17 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
     """
 
     # Material related parameters. These will be moved to argument
-    alpha_single_branch = 0         # relates to the bending of the dispersion relation towards the Brillouin zone boundary (used in Eq. 3.112)
-    m_dos = units.m_e               # :param m_dos: density of state mass (kg)
-    m_effective = units.m_e         # :param m_effective: effective mass of particle a.k.a. m_star (kg)
+    alpha_single_branch = 0. * units('m²/s')  # relates to the bending of the dispersion relation towards the Brillouin zone boundary (used in Eq. 3.112)
+    m_dos = 1 * units.m_e               # :param m_dos: density of state mass (kg)
+    m_effective = 1 * units.m_e         # :param m_effective: effective mass of particle a.k.a. m_star (kg)
 
     if lattice is None and E_BZ is None:
         raise ValueError("One of `lattice` and `E_BZ` should be given.")
 
     k_BZ = 2 * pi / lattice # wave factor at 1st Brillouin Zone Boundary
         
-    E_BZ = E_BZ or ( (units.hbar * k_BZ)**2 / (2*units.m_e) ).to('eV')  # Verduin Eq. 3.120
-    lattice = lattice or sqrt(units.h**2/(2*units.m_e*E_BZ)).to('Å') # If lattice is not given, but E_BZ is defined.
+    E_BZ = E_BZ or ((units.hbar * k_BZ)**2 / (2 * units.m_e)).to('eV')  # Verduin Eq. 3.120
+    lattice = lattice or np.sqrt(units.h**2 / (2 * units.m_e*E_BZ)).to('Å') # If lattice is not given, but E_BZ is defined.
 
     # print("E_BZ = {:~P}".format(E_BZ.to('eV'))) ??
 
@@ -56,9 +56,9 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
     h_bar_w_BZ = (units.hbar * c_s *k_BZ - units.hbar * alpha_single_branch * k_BZ**2).to('eV') # Verduin Eq. 3.114
     n_BZ = 1 / (expm1(h_bar_w_BZ / (units.k * T)) - 1) # Acoustic phonon population density , Verduin Eq. 3.117
     
-    sigma_ac = ((sqrt(m_effective * m_dos**3) * eps_ac**2 * units.k * T) /
+    sigma_ac = ((np.sqrt(m_effective * m_dos**3) * eps_ac**2 * units.k * T) /
                 (pi * units.hbar**4 * c_s**2 * rho_m * rho_n)).to('cm²') # Verduin equation (3.125) divided by number density
-
+    # 
     # extra multiplication factor for high energies according to Verduin equation (3.126)
     # noticed that A could be balanced out of the equation
     factor_high = ((n_BZ + 0.5) * 8 * m_dos * c_s**2 / (h_bar_w_BZ * units.k * T)).to('1/eV')
