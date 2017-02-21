@@ -123,7 +123,7 @@ cstool_model = Model([
     ('work_func', quantity("Work function", 'eV')),
     ('band_gap',  quantity("Band gap", 'eV')),
 
-    ('phonon_model', Type(
+    ('phonon', Type(
         "We have two choices for modeling phonon scattering: single and"
         " dual branch. The second option is important for crystaline"
         " materials; we then split the scattering in transverse and"
