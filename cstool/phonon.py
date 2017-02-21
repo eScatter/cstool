@@ -24,7 +24,7 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
     where the unit must have the same dimensionality as those given here.
 
     :param eps_ac: acoustic deformation potential (eV)
-    :param c_s: speed of sound (km/s) unit? 
+    :param c_s: speed of sound (m/s) unit? 
     :param M: molar weight (g/mol)
     :param rho_m: mass density (g/cm³)
     :param lattice: lattice constant (Å)
@@ -45,7 +45,7 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
 
     k_BZ = 2 * pi / lattice # wave factor at 1st Brillouin Zone Boundary
         
-    E_BZ = E_BZ or ( (units.h * k_BZ)**2 / (2*units.m_e) ).to('eV')  # Is that correct ? (Eq. 3.120)
+    E_BZ = E_BZ or ( (units.hbar * k_BZ)**2 / (2*units.m_e) ).to('eV')  # Verduin Eq. 3.120
     lattice = lattice or sqrt(units.h**2/(2*units.m_e*E_BZ)).to('Å') # If lattice is not given, but E_BZ is defined.
 
     # print("E_BZ = {:~P}".format(E_BZ.to('eV'))) ??
@@ -53,23 +53,25 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
     A = 5*E_BZ                                  # A: screening factor (eV); 5 is constant for every material.
     rho_n = (units.N_A / M * rho_m).to('cm⁻³')  # rho_n: number density.
     
-
-    w_AC = c_s*
-    h_bar_w_BZ = units.h * c_s / lattice - units.h * alpha_single_branch * 2 * pi / lattice**2
-    n_BZ = 1 / (expm1(h_bar_w_BZ / (units.k * T)) - 1)              # Acoustic phonon population density ()
+    h_bar_w_BZ = (units.hbar * c_s *k_BZ - units.hbar * alpha_single_branch * k_BZ**2).to('eV') # Verduin Eq. 3.114
+    n_BZ = 1 / (expm1(h_bar_w_BZ / (units.k * T)) - 1) # Acoustic phonon population density , Verduin Eq. 3.117
     
-    sigma_ac = ((sqrt(m_effective * m_density_of_states**3) * eps_ac**2 * units.k * T) /
-                (pi * units.hbar**4 * c_s**2 * rho_m * rho_n)).to('cm²') # equation (3.125) divided by number density
+    sigma_ac = ((sqrt(m_effective * m_dos**3) * eps_ac**2 * units.k * T) /
+                (pi * units.hbar**4 * c_s**2 * rho_m * rho_n)).to('cm²') # Verduin equation (3.125) divided by number density
 
-    # extra multiplication factor for high energies according to equation (3.126)
+    # extra multiplication factor for high energies according to Verduin equation (3.126)
     # noticed that A could be balanced out of the equation
-    factor_high = ((n_BZ + 0.5) * 8 * m_density_of_states * c_s**2 / (h_bar_w_BZ * units.k * T)).to('1/eV')
-    #alpha = ((n_BZ + 0.5) * 8 * h_bar_w_BZ / (units.k*T * E_BZ)).to('1/eV')
+    factor_high = ((n_BZ + 0.5) * 8 * m_dos * c_s**2 / (h_bar_w_BZ * units.k * T)).to('1/eV')
+    # alpha = ((n_BZ + 0.5) * 8 * h_bar_w_BZ / (units.k*T * E_BZ)).to('1/eV')
 
-    def mu(theta):
+    def mu(theta):  # see Eq. 3.126  
         return (1 - cos(theta)) / 2
 
     def norm(mu, E):
+        """Phonon cross-section for low energies.
+
+        :param E: energy in Joules.
+        :param theta: angle in radians."""
         return (sigma_ac / (4*pi * (1 + mu * E/A)**2)).to('cm²')
 
     def dcs_hi(mu, E):
