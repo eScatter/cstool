@@ -30,8 +30,9 @@ setup(
         'Development Status :: 4 - Beta',
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering :: Physics'],
-    install_requires=['pint', 'numpy', 'cslib', 'pyelsepa', 'noodles'],
+    install_requires=[
+        'pint', 'numpy', 'cslib', 'pyelsepa', 'noodles', 'tinydb'],
     extras_require={
-        'test': ['nose']
+        'test': ['pytest']
     },
 )
