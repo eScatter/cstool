@@ -93,3 +93,7 @@ ENV/
 .*.swp
 .*.swo
 
+# example dir
+examples
+!examples/*.py
+
