@@ -33,6 +33,6 @@ setup(
     install_requires=[
         'pint', 'numpy', 'cslib', 'pyelsepa', 'noodles', 'tinydb'],
     extras_require={
-        'test': ['pytest']
+        'test': ['pytest', 'pytest-cov', 'pep8', 'pyflakes']
     },
 )
