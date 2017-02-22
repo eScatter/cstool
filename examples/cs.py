@@ -25,7 +25,7 @@ def shift(dE):
 
 
 if __name__ == "__main__":
-    s = read_input("./data/materials/silicon.yaml")
+    s = read_input("./data/materials/pmma.yaml")
 
     print(pprint_settings(cstool_model, s))
     print()
