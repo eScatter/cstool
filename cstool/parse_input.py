@@ -118,8 +118,9 @@ def phonon_check(s: Settings):
 
 
 def transform_settings(model, settings):
-    return OrderedDict((k, model[k].transformer(v))
-                       for k, v in settings.items())
+    return yaml.comments.CommentedMap(
+            (k, model[k].transformer(v))
+            for k, v in settings.items())
 
 
 cstool_model = Model([
@@ -150,7 +151,7 @@ cstool_model = Model([
         check=is_settings & each_value_conforms(element_model),
         parser=lambda d: OrderedDict((k, parse_to_model(element_model, v))
                                      for k, v in d.items()),
-        transformer=lambda d: OrderedDict(
+        transformer=lambda d: yaml.comments.CommentedMap(
             (k, transform_settings(element_model, v))
             for k, v in d.items()))),
 
