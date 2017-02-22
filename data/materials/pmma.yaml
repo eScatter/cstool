@@ -22,6 +22,7 @@ phonon:                                 # Phonon model
         eps_ac: 9.2 eV
 
 elements:                               # elementary composition
-    H: { count: 8, Z: 1, M:  1.008 g/mol }      # number fraction, atomic number, and molar weight
+    # number fraction, atomic number, and molar weight
+    H: { count: 8, Z: 1, M:  1.008 g/mol }
     C: { count: 5, Z: 6, M: 12.011 g/mol }
     O: { count: 2, Z: 8, M: 15.999 g/mol }
