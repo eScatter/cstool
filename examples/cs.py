@@ -25,14 +25,14 @@ def shift(dE):
 
 
 if __name__ == "__main__":
-    s = read_input("./data/materials/gold.json")
+    s = read_input("./data/materials/silicon.yaml")
 
     print(pprint_settings(cstool_model, s))
     print()
-    print("Phonon loss: {:~P}".format(s.phonon_loss))
+    print("Phonon loss: {:~P}".format(s.phonon.energy_loss))
     print("Total molar weight: {:~P}".format(s.M_tot))
     print("Number density: {:~P}".format(s.rho_n))
-    print("Brioullon zone energy: {:~P}".format(s.E_BZ))
+    print("Brioullon zone energy: {:~P}".format(s.phonon.E_BZ))
     print()
     print("Computing Mott cross-sections using ELSEPA.")
 

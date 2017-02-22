@@ -11,7 +11,7 @@ from cslib.predicates import (
 
 from .phonon_loss import phonon_loss
 
-import json
+from ruamel import yaml
 from collections import OrderedDict
 
 
@@ -25,8 +25,9 @@ def parse_to_model(model, data):
 
 
 def pprint_settings(model, settings):
-    return json.dumps(transform_settings(model, settings),
-                      indent=4, ensure_ascii=False)
+    return yaml.dump(
+        transform_settings(model, settings),
+        indent=4, allow_unicode=True, Dumper=yaml.RoundTripDumper)
 
 
 def quantity(description, unit_str, default=None):
@@ -58,6 +59,14 @@ phonon_branch_model = Model([
     ('eps_ac',    quantity("Accoustic deformation potential", 'eV')),
     ('c_s',       quantity("Speed of sound", 'km/s'))])
 
+
+def compute_phonon_loss(s: Settings):
+    if s.model == 'single':
+        return phonon_loss(s.single.c_s, s.lattice, units.T_room)
+    else:
+        return phonon_loss(s.longitudinal.c_s, s.lattice, units.T_room)
+
+
 phonon_model = Model([
     ('model',     Type(
         "Whether the model is the `single` or `dual` mode.",
@@ -84,10 +93,9 @@ phonon_model = Model([
         parser=lambda d: parse_to_model(phonon_branch_model, d),
         transformer=lambda d: transform_settings(phonon_branch_model, d))),
 
-    ('phonon_loss', maybe_quantity(
+    ('energy_loss', maybe_quantity(
         "Phonon loss.", 'eV',
-        default=lambda s: phonon_loss(s.c_s, s.lattice, units.T_room)
-        .to('eV'))),
+        default=compute_phonon_loss)),
 
     ('E_BZ',        maybe_quantity(
         "Brioullon zone energy.", 'eV',
@@ -158,7 +166,7 @@ cstool_model = Model([
 
 
 def read_input(filename):
-    raw_data = json.load(open(filename, 'r'), object_pairs_hook=OrderedDict)
+    raw_data = yaml.load(open(filename, 'r'), Loader=yaml.RoundTripLoader)
     settings = parse_to_model(cstool_model, raw_data)
     if not check_settings(settings, cstool_model):
         raise ValueError("Parsed settings do not conform the model.")
