@@ -2,26 +2,17 @@ from cslib import (
     units)
 
 from cslib.settings import (
-    Type, Model, Settings, is_settings, each_value_conforms,
-    check_settings, conforms)
+    Type, Model, ModelType, Settings, each_value_conforms,
+    check_settings, conforms, transform_settings, parse_to_model)
 
 from cslib.predicates import (
-    Predicate,
+    predicate,
     is_string, is_integer, file_exists, has_units, is_none, is_)
 
 from .phonon_loss import phonon_loss
 
 from ruamel import yaml
 from collections import OrderedDict
-
-
-def parse_to_model(model, data):
-    s = Settings(_model=model)
-    for k, v in data.items():
-        if k not in model:
-            raise KeyError("Key {k} not in model.".format(k=k))
-        s[k] = model[k].parser(v)
-    return s
 
 
 def pprint_settings(model, settings):
@@ -77,21 +68,15 @@ phonon_model = Model([
     ('m_dos',     maybe_quantity(
         "Density of state mass.", 'g', default=units('1 m_e'))),
     ('lattice',   quantity("Lattice spacing", 'Å')),
-    ('single',    Type(
-        "Only given for single mode, parameters of model.",
-        check=is_none | conforms(phonon_branch_model),
-        parser=lambda d: parse_to_model(phonon_branch_model, d),
-        transformer=lambda d: transform_settings(phonon_branch_model, d))),
-    ('longitudinal', Type(
-        "Only given for dual mode, parameters of model.",
-        check=is_none | conforms(phonon_branch_model),
-        parser=lambda d: parse_to_model(phonon_branch_model, d),
-        transformer=lambda d: transform_settings(phonon_branch_model, d))),
-    ('transversal', Type(
-        "Only given for dual mode, parameters of model.",
-        check=is_none | conforms(phonon_branch_model),
-        parser=lambda d: parse_to_model(phonon_branch_model, d),
-        transformer=lambda d: transform_settings(phonon_branch_model, d))),
+    ('single',    ModelType(
+        phonon_branch_model, "branch",
+        "Only given for single mode, parameters of model.")),
+    ('longitudinal', ModelType(
+        phonon_branch_model, "branch",
+        "Only given for dual mode, parameters of model.")),
+    ('transversal', ModelType(
+        phonon_branch_model, "branch",
+        "Only given for dual mode, parameters of model.")),
 
     ('energy_loss', maybe_quantity(
         "Phonon loss.", 'eV',
@@ -103,11 +88,8 @@ phonon_model = Model([
         .to('eV')))])
 
 
-@Predicate
+@predicate("Consistent branch model")
 def phonon_check(s: Settings):
-    if not check_settings(s, phonon_model):
-        return False
-
     if s.model == 'single' and 'single' in s:
         return True
 
@@ -115,12 +97,6 @@ def phonon_check(s: Settings):
         return True
 
     return False
-
-
-def transform_settings(model, settings):
-    return yaml.comments.CommentedMap(
-            (k, model[k].transformer(v))
-            for k, v in settings.items())
 
 
 cstool_model = Model([
@@ -132,14 +108,13 @@ cstool_model = Model([
     ('work_func', quantity("Work function", 'eV')),
     ('band_gap',  quantity("Band gap", 'eV')),
 
-    ('phonon', Type(
+    ('phonon', ModelType(
+        phonon_model, "phonon",
         "We have two choices for modeling phonon scattering: single and"
         " dual branch. The second option is important for crystaline"
         " materials; we then split the scattering in transverse and"
         " longitudinal modes.",
-        check=phonon_check, obligatory=True,
-        parser=lambda d: parse_to_model(phonon_model, d),
-        transformer=lambda d: transform_settings(phonon_model, d))),
+        check=phonon_check, obligatory=True)),
 
     ('elf_file',  Type(
         "Filename of ELF data (Energy Loss Function). Data can be harvested"
@@ -148,7 +123,7 @@ cstool_model = Model([
 
     ('elements',  Type(
         "Dictionary of elements contained in the substance.",
-        check=is_settings & each_value_conforms(element_model),
+        check=each_value_conforms(element_model, "element"),
         parser=lambda d: OrderedDict((k, parse_to_model(element_model, v))
                                      for k, v in d.items()),
         transformer=lambda d: yaml.comments.CommentedMap(
@@ -164,6 +139,12 @@ cstool_model = Model([
         "Number density of atoms.", 'cm⁻³',
         default=lambda s: (units.N_A / s.M_tot * s.rho_m).to('cm⁻³')))
 ])
+
+
+cstool_model_type = ModelType(
+    cstool_model, "cstool",
+    """The settings given to cstool should follow a certain hierarchy,
+    and each setting is required to have a particular dimensionality.""")
 
 
 def read_input(filename):
