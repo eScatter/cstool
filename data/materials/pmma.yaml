@@ -1,27 +1,27 @@
-name:           pmma
-rho_m:          1.192 g/cm³
-fermi:          0 eV
-work_func:      2.5 eV
-band_gap:       5.6 eV
-elf_file:       data/elf/df_PMMA.dat
+name:           pmma                    # Name of the material
+rho_m:          1.192 g/cm³             # Density [mass/volume]
+fermi:          0 eV                    # Fermi level [energy]
+work_func:      2.5 eV                  # Work function [energy]
+band_gap:       5.6 eV                  # Band gap [energy]
+elf_file:       data/elf/df_PMMA.dat    # Location of ELF data
 
-phonon:
-    model:      dual
-    lattice:    5.43 Å
-    single:
-        alpha:  2.13e-7 m²/s
-        c_s:    2750 m/s"
-        eps_ac: 9.2 eV
-    longitudinal:
+phonon:                                 # Phonon model
+    model:      dual                    # 'single' or 'dual' branch
+    lattice:    5.43 Å                  # Lattice spacing [length]
+    single:                             # In case of 'single' branch
+        alpha:  2.13e-7 m²/s            # Bending parameter [area/time]
+        c_s:    2750 m/s"               # Speed of sound [velocity]
+        eps_ac: 9.2 eV                  # Accoustic deformation [energy]
+    longitudinal:                       # idem dito for longitudinal,
         alpha:  2.00e-7 m²/s
         c_s:    2750 m/s
         eps_ac: 9.2 eV
-    transversal:
+    transversal:                        # and transversal modes
         alpha:  2.26e-7 m²/s
         c_s:    2750 m/s
         eps_ac: 9.2 eV
 
-elements:
-    H: { count: 8, Z: 1, M:  1.008 g/mol }
+elements:                               # elementary composition
+    H: { count: 8, Z: 1, M:  1.008 g/mol }      # number fraction, atomic number, and molar weight
     C: { count: 5, Z: 6, M: 12.011 g/mol }
     O: { count: 2, Z: 8, M: 15.999 g/mol }
