@@ -1,3 +1,11 @@
+"""
+Parses input files of the Cross-section tool, and generates valid input files
+from (modified) settings in Python.
+"""
+
+from collections import OrderedDict
+from ruamel import yaml
+
 from cslib import (
     units)
 
@@ -11,9 +19,6 @@ from cslib.predicates import (
 
 from .phonon_loss import phonon_loss
 
-from ruamel import yaml
-from collections import OrderedDict
-
 
 def pprint_settings(model, settings):
     return yaml.dump(
@@ -24,14 +29,14 @@ def pprint_settings(model, settings):
 def quantity(description, unit_str, default=None):
     return Type(description, default=default,
                 check=has_units(unit_str),
-                transformer=lambda v: '{:~P}'.format(v),
+                generator=lambda v: '{:~P}'.format(v),
                 parser=units.parse_expression)
 
 
 def maybe_quantity(description, unit_str, default=None):
     return Type(description, default=default,
                 check=is_none | has_units(unit_str),
-                transformer=lambda v: v if v is None else '{:~P}'.format(v),
+                generator=lambda v: v if v is None else '{:~P}'.format(v),
                 parser=lambda s: s if s is None else units.parse_expression(s))
 
 
@@ -126,7 +131,7 @@ cstool_model = Model([
         check=each_value_conforms(element_model, "element"),
         parser=lambda d: OrderedDict((k, parse_to_model(element_model, v))
                                      for k, v in d.items()),
-        transformer=lambda d: yaml.comments.CommentedMap(
+        generator=lambda d: yaml.comments.CommentedMap(
             (k, transform_settings(element_model, v))
             for k, v in d.items()))),
 
