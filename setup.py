@@ -31,8 +31,9 @@ setup(
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering :: Physics'],
     install_requires=[
-        'pint', 'numpy', 'cslib', 'pyelsepa', 'noodles', 'tinydb', 'ruamel.yaml'],
+        'pint', 'numpy', 'cslib', 'pyelsepa', 'noodles', 'tinydb',
+        'ruamel.yaml'],
     extras_require={
-        'test': ['pytest', 'pytest-cov', 'pep8', 'pyflakes']
+        'test': ['pytest', 'pytest-cov', 'pep8', 'pyflakes', 'sphinx']
     },
 )

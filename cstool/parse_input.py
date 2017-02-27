@@ -11,7 +11,7 @@ from cslib import (
 
 from cslib.settings import (
     Type, Model, ModelType, Settings, each_value_conforms,
-    check_settings, conforms, transform_settings, parse_to_model)
+    check_settings, generate_settings, parse_to_model)
 
 from cslib.predicates import (
     predicate,
@@ -22,7 +22,7 @@ from .phonon_loss import phonon_loss
 
 def pprint_settings(model, settings):
     return yaml.dump(
-        transform_settings(model, settings),
+        generate_settings(settings),
         indent=4, allow_unicode=True, Dumper=yaml.RoundTripDumper)
 
 
@@ -132,7 +132,7 @@ cstool_model = Model([
         parser=lambda d: OrderedDict((k, parse_to_model(element_model, v))
                                      for k, v in d.items()),
         generator=lambda d: yaml.comments.CommentedMap(
-            (k, transform_settings(element_model, v))
+            (k, generate_settings(v))
             for k, v in d.items()))),
 
     ('M_tot',       maybe_quantity(
