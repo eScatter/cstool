@@ -79,7 +79,7 @@ The material class has some more helper functions:
         if B < 100 eV and w_0 > B
             return B
     return -1
-    
+
 Why the upper limit of 100 eV?
 
 
@@ -130,10 +130,10 @@ Given this structure the `.mat` file format looks like:
     f64             phonon_loss
     f64             number_density
     map<f,f>        elastic_tcs
-    map<f,map<f,f>  elastic_icdf
+    map<f,map<f,f>> elastic_icdf
     map<f,f>        inelastic_tcs
-    map<f,map<f,f>  inelastic_icdf
-    map<f,map<f,f>  ionization_tcs
+    map<f,map<f,f>> inelastic_icdf
+    map<f,map<f,f>> ionization_tcs
     vec<f>          osi_energies
 """
 

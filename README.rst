@@ -10,6 +10,53 @@ the place to do it.
 Currently, this module needs both the `pyelsepa` and `cslib` packages to be installed,
 preferably in a VirtualEnv (so that you don't muck-up your Python installation).
 
+Installing
+==========
+
+To setup an environment for CSTool, first make sure you have the correct version of Python (these commands may vary slightly from system to system)::
+
+    > python3 --version   # version should be 3.5 or higher
+    Python 3.5.3
+
+clone the needed repositories::
+
+    > git clone http://github.com/eScatter/cslib.git
+    ...
+    > git clone http://github.com/eScatter/pyelsepa.git
+    ...
+    > git clone http://github.com/eScatter/cstool.git
+    ...
+
+create a virtual environment::
+
+    > virtual -p python3 cstool-env
+    ...
+    > source ./cstool-env/bin/activate
+    (cstool-env) >
+
+Now we need to install `cslib` and `pyelsepa`::
+
+    (cstool-env) > cd cslib
+    (cstool-env) ./cslib> pip install .
+    (cstool-env) ./cslib> cd ../pyelsepa
+    (cstool-env) ./pyelsepa> pip install .
+    (cstool-env) ./pyelsepa>
+
+And we have to install the Docker image for Elsepa, make sure you have downloaded `adus_v1_0.tar.gz`_::
+
+    (cstool-env) ./pyelsepa> docker -v  # make sure you have the latest
+    Docker version 1.13.1, build 092cba372
+    (cstool-env) ./pyelsepa> cd docker
+    (cstool-env) ./pyelsepa> ls
+    adus_v1_0.tar.gz  Dockerfile  README.md
+    (cstool-env) ./pyelsepa> docker build -t elsepa .
+    ...
+    Successfully built <some hex-code>
+
+Now you should be ready to run the example in `examples/cs.py`.
+
+_ adus_v1_0.tar.gz http://www.cpc.cs.qub.ac.uk/summaries/ADUS_v1_0.html
+
 Data sources
 ============
 
@@ -17,14 +64,14 @@ The material files contain most of the physics involved.
 
 * [ELSEPA](http://adsabs.harvard.edu/abs/2005CoPhC.165..157S) can be downloaded from the
   Computer Physics communications Program library as `adus_v1_0.tar.gz`_. It has an
-  attribute-only license for non-commercial use. We use a dockerized ELSEPA to compute Mott 
+  attribute-only license for non-commercial use. We use a dockerized ELSEPA to compute Mott
   cross-sections, through the `pyElsepa`_ module.
 
 * Livermore database [ENDF/B-VII.1](http://www.nndc.bnl.gov/endf/b7.1/download.html). We use this
   database retrieve ionization energies, occupancy and cross-sections.
 
 * ELF data (Energy Loss Function). This data was compiled by Kieft & Bosch (2008) for their
-  (Geant4 based) version of the electron scattering model. It uses data from Palik (1985,1998) - 
+  (Geant4 based) version of the electron scattering model. It uses data from Palik (1985,1998) -
   "Handbook of Optical Constants of Solids" [1]_ - and [Henke et al.](henke.lbl.gov) [2]_. This data
   is included here in the `/data/elf` folder.
 
