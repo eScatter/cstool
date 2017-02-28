@@ -14,8 +14,10 @@ from numpy import (cos, expm1, log10)
 from functools import partial
 
 
-def phonon_crosssection(eps_ac, c_s, M, rho_m,
-                        lattice=None, E_BZ=None, T=units.T_room,
+def phonon_crosssection(M, rho_m, eps_ac, c_s, alpha,
+                        m_dos, m_eff,
+                        lattice=None,
+                        E_BZ=None, T=units.T_room,
                         interpolate=log_interpolate,
                         h=lambda x: (3 - 2 * x) * x**2):
     """
@@ -24,10 +26,14 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
     given as quantities with units, where the unit must have the same
     dimensionality as those given here.
 
-    :param eps_ac: acoustic deformation potential (eV)
-    :param c_s: speed of sound (m/s) unit?
     :param M: molar weight (g/mol)
     :param rho_m: mass density (g/cm³)
+    :param eps_ac: acoustic deformation potential (eV)
+    :param c_s: speed of sound (m/s) unit?
+    :paran alpha: relates to the bending of the dispersion relation towards
+    the Brillouin zone boundary (used in Eq. 3.112)('m²/s')
+    :param m_dos: density of state mass (kg)
+    :param m_eff: effective mass of particle a.k.a. m_star (kg)
     :param lattice: lattice constant (Å)
     :param E_BZ: the electron energy at the Brioullin zone (eV); can be deduced
     from `lattice`.
@@ -36,17 +42,6 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
 
     One of the parameters `lattice` and `E_BZ` should be given.
     """
-
-    # Material related parameters. These will be moved to argument
-    # relates to the bending of the dispersion relation towards the Brillouin
-    # zone boundary (used in Eq. 3.112)
-    # TODO: make parameter.
-    alpha_single_branch = 0. * units('m²/s')
-    # TODO: make parameter. :param m_dos: density of state mass (kg)
-    m_dos = 1 * units.m_e
-    # TODO: make parameter. :param m_effective: effective mass of particle
-    # a.k.a. m_star (kg)
-    m_effective = 1 * units.m_e
 
     if lattice is None and E_BZ is None:
         raise ValueError("One of `lattice` and `E_BZ` should be given.")
@@ -58,23 +53,23 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
     E_BZ = E_BZ or ((units.hbar * k_BZ)**2 / (2 * units.m_e)).to('eV')
 
     # If lattice is not given, but E_BZ is defined.
-    lattice = lattice or np.sqrt(units.h**2 / (2 * units.m_e*E_BZ)).to('Å')
+    lattice = lattice or np.sqrt(units.h**2 / (2 * units.m_e * E_BZ)).to('Å')
 
     # print("E_BZ = {:~P}".format(E_BZ.to('eV'))) ??
 
     # A: screening factor (eV); 5 is constant for every material.
-    A = 5*E_BZ
+    A = 5 * E_BZ
     # rho_n: number density.
     rho_n = (units.N_A / M * rho_m).to('cm⁻³')
 
-    h_bar_w_BZ = (units.hbar * (c_s * k_BZ - alpha_single_branch * k_BZ**2)) \
+    h_bar_w_BZ = (units.hbar * (c_s * k_BZ - alpha * k_BZ**2)) \
         .to('eV')    # Verduin Eq. 3.114
 
     # Acoustic phonon population density , Verduin Eq. 3.117
-    n_BZ = 1 / (expm1(h_bar_w_BZ / (units.k * T)) - 1)
+    n_BZ = 1 / expm1(h_bar_w_BZ / (units.k * T))
 
     # Verduin equation (3.125) divided by number density
-    sigma_ac = ((np.sqrt(m_effective * m_dos**3) * eps_ac**2 * units.k * T) /
+    sigma_ac = ((np.sqrt(m_eff * m_dos**3) * eps_ac**2 * units.k * T) /
                 (pi * units.hbar**4 * c_s**2 * rho_m * rho_n)).to('cm²')
 
     # extra multiplication factor for high energies according to Verduin
@@ -114,10 +109,10 @@ def phonon_crosssection(eps_ac, c_s, M, rho_m,
 
 
 def phonon_crosssection_dual_branch(
-        M, rho_m, eps_ac_lo, c_s_lo, alpha_lo=1. * units('m²/s'),
-        eps_ac_tr=1. * units('eV'), c_s_tr=1. * units('m/s'),
-        alpha_tr=1. * units('m²/s'),
-        m_dos=1 * units.m_e, m_eff=1 * units.m_e,
+        M, rho_m,
+        eps_ac_lo, c_s_lo, alpha_lo,
+        eps_ac_tr, c_s_tr, alpha_tr,
+        m_dos, m_eff,
         lattice=None, E_BZ=None, T=units.T_room,
         interpolate=log_interpolate, h=lambda x: (3 - 2 * x) * x**2):
     """Compute the differential phonon cross-sections using dual-branch model
@@ -171,8 +166,8 @@ def phonon_crosssection_dual_branch(
         .to('eV')    # Verduin Eq. 3.114
 
     # Acoustic phonon population density , Verduin Eq. 3.117
-    n_BZ_lo = 1 / (expm1(h_bar_w_BZ_lo / (units.k * T)) - 1)
-    n_BZ_tr = 1 / (expm1(h_bar_w_BZ_tr / (units.k * T)) - 1)
+    n_BZ_lo = 1 / expm1(h_bar_w_BZ_lo / (units.k * T))
+    n_BZ_tr = 1 / expm1(h_bar_w_BZ_tr / (units.k * T))
 
     # Verduin equation (3.125) divided by number density without branch
     # dependent parameters
@@ -238,12 +233,14 @@ def phonon_cs_fn(s: Settings):
             interpolate=log_interpolate)
     else:
         return phonon_crosssection(
+            s.M_tot, s.rho_m,
             s.phonon.single.eps_ac,
             s.phonon.single.c_s,
-            s.M_tot, s.rho_m,
-            s.phonon.lattice,
+            s.phonon.single.alpha,
+            s.phonon.m_dos,
+            s.phonon.m_eff,
+            s.phonon.lattice, T=units.T_room,
             interpolate=log_interpolate)  # , h=lambda x: x)
-
 
 if __name__ == "__main__":
     import argparse
