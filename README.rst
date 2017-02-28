@@ -55,8 +55,6 @@ And we have to install the Docker image for Elsepa, make sure you have downloade
 
 Now you should be ready to run the example in `examples/cs.py`.
 
-_ adus_v1_0.tar.gz http://www.cpc.cs.qub.ac.uk/summaries/ADUS_v1_0.html
-
 Data sources
 ============
 
