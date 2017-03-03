@@ -56,13 +56,6 @@ phonon_branch_model = Model([
     ('c_s',       quantity("Speed of sound", 'km/s'))])
 
 
-def compute_phonon_loss(s: Settings):
-    if s.model == 'single':
-        return phonon_loss(s.single.c_s, s.lattice, units.T_room)
-    else:
-        return phonon_loss(s.longitudinal.c_s, s.lattice, units.T_room)
-
-
 phonon_model = Model([
     ('model',     Type(
         "Whether the model is the `single` or `dual` mode.",
@@ -85,7 +78,7 @@ phonon_model = Model([
 
     ('energy_loss', maybe_quantity(
         "Phonon loss.", 'eV',
-        default=compute_phonon_loss)),
+        default=phonon_loss)),
 
     ('E_BZ',        maybe_quantity(
         "Brioullon zone energy.", 'eV',

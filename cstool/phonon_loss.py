@@ -45,29 +45,28 @@ def branch_loss(c_s, alpha, lattice, T):
     y2, err2 = quad(denominator, 0, k_BZ_m)
     # TO DO: assign the units back
 
-    return (y1 / y2) * units('J')
+    return ((y1 / y2) * units('J')).to('eV')
 
 
-def phonon_loss(s):
-    energy_loss = 0
-    if s.phonon.model == 'dual':
+def phonon_loss(phonon):
+    if phonon.model == 'dual':
         # Calculate net average energy loss of multiple branches:
         # 1*Longitidunal + 2*Transversal Branch
-        energy_loss = (1.0 * branch_loss(s.phonon.longitudinal.c_s,
-                                         s.phonon.longitudinal.alpha,
-                                         s.phonon.lattice,
+        energy_loss = (1.0 * branch_loss(phonon.longitudinal.c_s,
+                                         phonon.longitudinal.alpha,
+                                         phonon.lattice,
                                          T=units.T_room) +
-                       2.0 * branch_loss(s.phonon.transversal.c_s,
-                                         s.phonon.transversal.alpha,
-                                         s.phonon.lattice,
+                       2.0 * branch_loss(phonon.transversal.c_s,
+                                         phonon.transversal.alpha,
+                                         phonon.lattice,
                                          T=units.T_room)) / 3
         return energy_loss
     else:
         # Calculate net average energy loss of single branch:
         # 1*Longitidunal branch
-        energy_loss = 1.0 * branch_loss(s.phonon.single.c_s,
-                                        s.phonon.single.alpha,
-                                        s.phonon.lattice,
+        energy_loss = 1.0 * branch_loss(phonon.single.c_s,
+                                        phonon.single.alpha,
+                                        phonon.lattice,
                                         T=units.T_room)
         return energy_loss
 
@@ -86,6 +85,6 @@ if __name__ == "__main__":
     s = read_input(args.material_file)
 
     # def phonon_loss(c_s, lattice, T):
-    energy_loss = phonon_loss(s)
+    energy_loss = phonon_loss(s.phonon)
     print("Phonon energy loss: {:~P}".format(energy_loss.to('eV')))
     print("For " + s.phonon.model + " branch")
