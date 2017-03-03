@@ -8,6 +8,8 @@ elf_file:       data/elf/df_PMMA.dat    # Location of ELF data
 phonon:                                 # Phonon model
     model:      dual                    # 'single' or 'dual' branch
     lattice:    5.43 Å                  # Lattice spacing [length]
+    m_dos:      1 g                     # Density of state mass []
+    m_eff:      1 g                     # Effective mass     
     single:                             # In case of 'single' branch
         alpha:  2.13e-7 m²/s            # Bending parameter [area/time]
         c_s:    2750 m/s"               # Speed of sound [velocity]

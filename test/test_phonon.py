@@ -13,6 +13,8 @@ pmma = {
     "phonon": {
         "model": "dual",
         "lattice": "5.43 Å",
+        "m_dos":   " 9.10938215e-31 kg",
+        "m_eff":   " 9.10938215e-31 kg",
         "single": {
             "alpha": "2.13e-7 m²/s",
             "c_s": "2750 m/s",
