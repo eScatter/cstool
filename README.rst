@@ -29,7 +29,7 @@ clone the needed repositories::
 
 create a virtual environment::
 
-    > virtual -p python3 cstool-env
+    > virtualenv -p python3 cstool-env
     ...
     > source ./cstool-env/bin/activate
     (cstool-env) >
@@ -52,6 +52,12 @@ And we have to install the Docker image for Elsepa, make sure you have downloade
     (cstool-env) ./pyelsepa> docker build -t elsepa .
     ...
     Successfully built <some hex-code>
+
+
+Now we need to install `cstool`::
+
+    (cstool-env) ./pyelsepa> cd ../cstool
+    (cstool-env) ./cstool> pip install .
 
 Now you should be ready to run the example in `examples/cs.py`.
 
