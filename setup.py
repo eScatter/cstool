@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, Extension
 from os import path
 from codecs import open
 
@@ -34,6 +34,11 @@ setup(
         'pint', 'numpy', 'cslib', 'pyelsepa', 'noodles', 'tinydb',
         'ruamel.yaml'],
     extras_require={
-        'test': ['pytest', 'pytest-cov', 'pep8', 'pyflakes', 'sphinx']
+        'test': ['pytest', 'pytest-cov', 'pep8', 'pyflakes', 'sphinx'],
     },
+    # https://docs.python.org/3.6/distutils/setupscript.html#describing-extension-modules
+    # http://stackoverflow.com/questions/4529555/building-a-ctypes-based-c-library-with-distutils
+    # http://stackoverflow.com/questions/16854066/using-distutils-and-build-clib-to-build-c-library
+    ext_modules=[Extension('icdf', ['src/icdf.cc'])]
+    # libraries=[('icdf', {'sources': ['src/icdf.cc']})],
 )
