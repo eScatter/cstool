@@ -1,7 +1,7 @@
 from math import pi
 import numpy as np
 
-from cstool.icdf import icdf
+from cstool.icdf import inverse_cdf
 
 
 def normal(mu, sigma):
@@ -18,11 +18,10 @@ def pdf(x):
 
 def test_icdf():
     p = np.linspace(0.0, 1.0, 1025)
-    F = icdf(pdf, -5, 5, 1024)
+    F = inverse_cdf(pdf, -5, 5, 1024)
     dp = (p[1:] - p[:-1]) / (F[1:] - F[:-1])
     x = (F[1:] + F[:-1]) / 2.
 
     err = abs(dp - pdf(x))
     assert max(err) < 1e-3
     assert err.mean() < 1e-4
-

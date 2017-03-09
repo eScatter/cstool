@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
-from setuptools import setup, Extension
+from distutils.core import setup
+from distutils.command.build_clib import build_clib
+from distutils.extension import Extension
+
+from Cython.Build import cythonize
+from Cython.Distutils import build_ext
+
 from os import path
 from codecs import open
 
@@ -39,6 +45,9 @@ setup(
     # https://docs.python.org/3.6/distutils/setupscript.html#describing-extension-modules
     # http://stackoverflow.com/questions/4529555/building-a-ctypes-based-c-library-with-distutils
     # http://stackoverflow.com/questions/16854066/using-distutils-and-build-clib-to-build-c-library
-    ext_modules=[Extension('icdf', ['src/icdf.cc'])]
-    # libraries=[('icdf', {'sources': ['src/icdf.cc']})],
+    # cmdclass={'build_clib': build_clib, 'build_ext': build_ext},
+    ext_modules=cythonize(Extension(
+        "cstool.icdf",
+        sources=["src/icdf.cc", "cstool/icdf.pyx"],
+        language="c++")),
 )
