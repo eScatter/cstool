@@ -4,11 +4,27 @@ from distutils.core import setup
 from distutils.command.build_clib import build_clib
 from distutils.extension import Extension
 
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    has_cython = False
+else:
+    has_cython = True
 
 from os import path
 from codecs import open
+
+
+if has_cython:
+    ext_modules = cythonize([Extension(
+            "cstool.icdf",
+            sources=["src/icdf.cc", "cstool/icdf.pyx"],
+            language="c++")])
+else:
+    ext_modules = [Extension(
+            "cstool.icdf",
+            sources=["src/icdf.cc", "cstool/icdf.cpp"],
+            language="c++")]
 
 here = path.abspath(path.dirname(__file__))
 
@@ -40,14 +56,10 @@ setup(
         'pint', 'numpy', 'cslib', 'pyelsepa', 'noodles', 'tinydb',
         'ruamel.yaml'],
     extras_require={
-        'test': ['pytest', 'pytest-cov', 'pep8', 'pyflakes', 'sphinx'],
+        'test': ['pytest', 'pytest-cov', 'pep8', 'pyflakes'],
+        'dev': [
+            'pytest', 'pytest-cov', 'pep8', 'pyflakes', 'sphinx',
+            'cython'],
     },
-    # https://docs.python.org/3.6/distutils/setupscript.html#describing-extension-modules
-    # http://stackoverflow.com/questions/4529555/building-a-ctypes-based-c-library-with-distutils
-    # http://stackoverflow.com/questions/16854066/using-distutils-and-build-clib-to-build-c-library
-    # cmdclass={'build_clib': build_clib, 'build_ext': build_ext},
-    ext_modules=cythonize(Extension(
-        "cstool.icdf",
-        sources=["src/icdf.cc", "cstool/icdf.pyx"],
-        language="c++")),
+    ext_modules=ext_modules
 )
