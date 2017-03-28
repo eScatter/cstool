@@ -19,3 +19,4 @@ extern "C" void compute_icdf(
         std::bind(pdf, _1, data), a, b, n, epsilon);
     std::copy(table.values.begin(), table.values.end(), result);
 }
+

@@ -1,6 +1,7 @@
 from noodles import (schedule, schedule_hint)
 
-from cslib import Settings, Q_, DCS
+from cslib import Settings, Q_
+from cslib.dcs import DCS
 from elsepa import elscata
 import numpy as np
 
@@ -27,27 +28,28 @@ def s_get_dcs(result, energies):
     dcs = np.array([result[k]['DCS[0]'].to('cm²/sr').magnitude
                    for k in dcs_keys]) * Q_('cm²/sr')
 
-    return DCS(energies, angles, dcs)
+    return DCS(angles, energies[:, None], dcs,
+               x_units='rad', y_units='eV', log='y')
 
 
 @schedule
 def s_join_dcs(*dcs_lst):
-    angle = dcs_lst[0].angle
+    angle = dcs_lst[0].x
     energy = np.concatenate(
-        [dcs.energy for dcs in dcs_lst], axis=0) \
-        * dcs_lst[0].energy.units
+        [dcs.y for dcs in dcs_lst], axis=0) \
+        * dcs_lst[0].y.units
     cs = np.concatenate(
-        [dcs.cs for dcs in dcs_lst], axis=0) \
-        * dcs_lst[0].cs.units
-    return DCS(energy, angle, cs)
+        [dcs.z for dcs in dcs_lst], axis=0) \
+        * dcs_lst[0].z.units
+    return DCS(angle, energy, cs, log='y')
 
 
 @schedule
 def s_sum_dcs(material, **dcs):
-    cs = sum(element.count * dcs[symbol].cs
+    cs = sum(element.count * dcs[symbol].z
              for symbol, element in material.elements.items())
     first = next(iter(dcs))
-    return DCS(dcs[first].energy, dcs[first].angle, cs)
+    return DCS(dcs[first].x, dcs[first].y, cs, log='y')
 
 
 def s_mott_cs(material: Settings, energies, split=4, mabs=False):

@@ -88,11 +88,17 @@ namespace eScatter { namespace numeric {
         result.values[0] = x1;
         result.values[n] = x2;
 
-        real_t total = integrate_romberg(pdf, x1, x2, epsilon, 16);
+        real_t total = integrate_romberg(pdf, x1, x2, epsilon, 10);
+        //std::cout << "total: " << total << std::endl;
+        auto norm_pdf = [&] (real_t x) {
+            return pdf(x) / total;
+        };
+
+        real_t h = 1.0;
         unsigned m = n;
         while (m > 1)
         {
-            total /= 2.;
+            h /= 2.;
             m /= 2;
 
             for (unsigned j = m; j < n; j += 2*m)
@@ -102,8 +108,8 @@ namespace eScatter { namespace numeric {
 
                 real_t x = find_root_brent(
                     [&] (real_t x) {
-                        return integrate_romberg(pdf, x1, x, epsilon, 10);
-                    }, pdf, x1, x2, total, epsilon);
+                        return integrate_romberg(norm_pdf, x1, x, epsilon/h, 10);
+                    }, norm_pdf, x1, x2, h, epsilon);
 
                 result.values[j] = x;
             }

@@ -10,7 +10,7 @@ namespace eScatter { namespace numeric
      * \param f Function to integrate.
      * \param a Left bound.
      * \param b Right bound.
-     * \param epsilon Absolute precision.
+     * \param epsilon Relative precision, we asume non-zero integral
      * \param max_it Maximum number of iterations.
      * \return Integral of f, from a to b.
      *
@@ -55,7 +55,7 @@ namespace eScatter { namespace numeric
                 k *= 4;
             }
 
-            if (++i == max_it or fabs(s - result) < epsilon)
+            if (++i == max_it or fabs((s - result) / result) < epsilon)
                 return s;
 
             R[i] = s;

@@ -70,9 +70,9 @@ The material class has some more helper functions:
 * ionization_energy(K, P) -> creates an ionization_map interpolating the
     tables in ionization_tcs using the log of K, if K > B. Each cross-section
     found is added to a running total tcs: ionization_map(tcs) = B. Then the
-    first binding energy for which P < tcs(B)/TCS. This is a weird way of choosing
-    a binding energy with a probability that scales with the associated cross-
-    section.
+    first binding energy for which P < tcs(B)/TCS. This is a weird way of
+    choosing a binding energy with a probability that scales with the
+    associated crosssection.
 
 * outer_shell_ionization_energy(w_0) ->
     for each binding energy B
@@ -137,12 +137,13 @@ Given this structure the `.mat` file format looks like:
     vec<f>          osi_energies
 """
 
-from collections import OrderedDict
+import numpy as np
 
-type_id_lst = ['bool', 'int8', 'uint8', 'int16', 'uint16',
-               'int32', 'uint32', 'int64', 'uint64',
-               'float32', 'float64', 'string', 'blob']
 
-type_id = OrderedDict(zip(type_id_lst, range(len(type_id_lst))))
+def compute_icdf(f, a, b, n=1024, sampling=100000):
+    x = np.linspace(a, b, sampling)
+    nx = np.linspace(0, 1, n)
+    y = f(x)
+    cf = np.r_[0, np.cumsum((x[1:] - x[:-1]) * (y[:-1] + y[1:]) / 2.0)]
+    return np.interp(nx, cf/cf[-1], x)
 
-print(type_id)

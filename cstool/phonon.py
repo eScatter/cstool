@@ -1,7 +1,8 @@
 # Based on Schreiber & Fitting
 # See /doc/extra/phonon-scattering.lyx
 
-from cslib import units, Settings, DCS
+from cslib import units, Settings
+from cslib.dcs import DCS
 from cslib.numeric import (log_interpolate)
 
 from cstool.parse_input import read_input
@@ -95,7 +96,7 @@ def phonon_crosssection(M, rho_m, eps_ac, c_s, alpha,
         :param theta: angle in radians."""
         return (factor_high * mu * E).to(units.dimensionless)
 
-    def dcs(E, theta):
+    def dcs(theta, E):
         m = mu(theta)
 
         g = interpolate(
@@ -204,7 +205,7 @@ def phonon_crosssection_dual_branch(
         return ((sigma_ac * factor_high * two_branch_factor * mu * E) /
                 (4 * pi * (1 + mu * E / A)**2)).to('cm²')
 
-    def dcs(E, theta):
+    def dcs(theta, E):
         m = mu(theta)
 
         g = interpolate(
@@ -242,6 +243,7 @@ def phonon_cs_fn(s: Settings):
             s.phonon.lattice, T=units.T_room,
             interpolate=log_interpolate)  # , h=lambda x: x)
 
+
 if __name__ == "__main__":
     import argparse
 
@@ -260,6 +262,7 @@ if __name__ == "__main__":
     theta_range = np.linspace(0, pi, num=100) * units.rad
 
     csf = phonon_cs_fn(s)
-    cs = DCS(E_range[:, None], theta_range, csf(E_range[:, None], theta_range))
+    cs = DCS(theta_range, E_range[:, None], csf(theta_range, E_range[:, None]),
+             x_units='rad', y_units='eV', z_units='cm²', log='y')
 
     cs.save_gnuplot('{}_phonon.bin'.format(s.name))

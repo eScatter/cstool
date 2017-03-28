@@ -134,7 +134,10 @@ cstool_model = Model([
         default=lambda s: sum(e.M * e.count for e in s.elements.values()))),
 
     ('rho_n',       maybe_quantity(
-        "Number density of atoms.", 'cm⁻³',
+        "Number density of atoms or molecules in compound. For instance "
+        "in the case of silicon dioxide this is the number density of "
+        "groups of two oxygen and one silicon atom, even if SiO2 is not "
+        "a molecule per se.", 'cm⁻³',
         default=lambda s: (units.N_A / s.M_tot * s.rho_m).to('cm⁻³')))
 ])
 

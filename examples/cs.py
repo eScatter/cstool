@@ -6,22 +6,58 @@ from cstool.mott import s_mott_cs
 from cstool.phonon import phonon_cs_fn
 from cstool.elf import read_elf_data
 from cstool.inelastic import inelastic_cs_fn
-
+from cstool.compile import compute_icdf
 from cslib.noodles import registry
 from cslib import units
-from cslib.dataframe import DCS
-from cslib.numeric import log_interpolate
+from cslib.dcs import DCS
+# from cslib.numeric import log_interpolate
 
 import numpy as np
+import h5py as h5
 from numpy import (log10)
+
+
+def log_interpolate(f1, f2, h, a, b):
+    """Interpolate two functions `f1` and `f2` using interpolation
+    function `h`, which maps [0,1] to [0,1] one-to-one."""
+    assert callable(f1)
+    assert callable(f2)
+    assert callable(h)
+
+    def weight(x):
+        return np.clip(np.log(x / a) / np.log(b / a), 0.0, 1.0)
+
+    def g(x):
+        w = h(weight(x))
+        return (1 - w) * f1(x) + w * f2(x)
+
+    return g
 
 
 def shift(dE):
     def decorator(cs_fn):
-        def shifted(E, *args):
-            return cs_fn(E + dE, *args)
+        def shifted(a, E, *args):
+            return cs_fn(a, E + dE, *args)
         return shifted
     return decorator
+
+
+def compute_elastic_tcs(dcs, K, n):
+    """
+    `set_elastic_data(K, dcs(theta): f -> f)`
+    -----------------------------------------
+    dcs_int(theta) := dcs(theta) 2 pi sin(theta)
+    cumulative_dcs(a) := integrate(0, a, dcs_int)
+    tcs = cumulative_dcs(pi) # compute total for normalisation
+    elastic_tcs(log(K)) := log(tcs)
+    icdf(K, P) -> theta | P == cumulative_dcs(theta)/tcs
+    """
+    print('.', end='', flush=True)
+
+    def integrant(theta):
+        return dcs(theta, K) * 2 * np.pi * np.sin(theta)
+
+    return compute_icdf(integrant, 0, np.pi, n)
 
 
 if __name__ == "__main__":
@@ -34,7 +70,7 @@ if __name__ == "__main__":
     print("Number density: {:~P}".format(s.rho_n))
     print("Brioullon zone energy: {:~P}".format(s.phonon.E_BZ))
     print()
-    print("Computing Mott cross-sections using ELSEPA.")
+    print("# Computing Mott cross-sections using ELSEPA.")
 
     e = np.logspace(1, 5, 145) * units.eV
     f_mcs = s_mott_cs(s, e, split=12, mabs=False)
@@ -46,31 +82,52 @@ if __name__ == "__main__":
 
     mcs.save_gnuplot('{}_mott.bin'.format(s.name))
 
-    print("Computing Phonon cross-sections.")
+    print("# Computing Phonon cross-sections.")
     e = np.logspace(-2, 3, 181) * units.eV
-    pcs = DCS.from_function(phonon_cs_fn(s), e[:, None], mcs.angle)
+    cs = phonon_cs_fn(s)(mcs.x, e[:, None])
+    pcs = DCS(mcs.x.to('rad'), e[:, None], cs.to('cm²'), log='y')
     pcs.save_gnuplot('{}_phonon.bin'.format(s.name))
 
-    print("Merging elastic scattering processes.")
+    print("# Merging elastic scattering processes.")
 
-    @shift(s.fermi)
-    def elastic_cs_fn(E, a):
+    phonon_cs = phonon_cs_fn(s)
+
+    @shift(s.fermi.to('eV').magnitude)
+    def elastic_cs_fn(a, E):
         return log_interpolate(
-            lambda E: phonon_cs_fn(s)(E, a), lambda E: mcs(E, a),
-            lambda x: x, 100*units.eV, 200*units.eV)(E)
+            lambda E: phonon_cs(a*units.rad, E*units.eV).to('cm^2').magnitude,
+            lambda E: mcs.unsafe(a, E.flat),
+            lambda x: x, 100, 200)(E)
 
     e = np.logspace(-2, 5, 129) * units.eV
-    ecs = DCS.from_function(elastic_cs_fn, e[:, None], mcs.angle)
+    ecs = DCS(mcs.x.to('rad'), e[:, None],
+              elastic_cs_fn(
+                  mcs.x.to('rad').magnitude,
+                  e.to('eV').magnitude[:, None]) * units('cm^2'))
     ecs.save_gnuplot('{}_ecs.bin'.format(s.name))
 
-    print("Reading inelastic scattering cross-sections.")
-    elf_data = read_elf_data(s.elf_file)
-    K_bounds = (s.fermi + 0.1 * units.eV, 1e4 * units.eV)
-    K = np.logspace(
-        log10(K_bounds[0].to('eV').magnitude),
-        log10(K_bounds[1].to('eV').magnitude), 1024) * units.eV
-    w = np.logspace(
-        log10(elf_data['w0'][0].to('eV').magnitude),
-        log10(K_bounds[1].to('eV').magnitude / 2), 1024) * units.eV
-    ics = DCS.from_function(inelastic_cs_fn(s), K[:, None], w)
-    ics.save_gnuplot('{}_ics.bin'.format(s.name))
+    outfile = h5.File("{}.mat.hdf5".format(s.name), 'w')
+    elastic_grp = outfile.create_group("elastic")
+    energies = elastic_grp.create_dataset("energy", (129,), dtype='f')
+    energies[:] = e.magnitude
+    energies.attrs['units'] = 'eV'
+    elastic_tcs = elastic_grp.create_dataset("table", (129, 1024), dtype='f')
+    elastic_tcs.attrs['units'] = 'radian'
+    print("# Computing elastic total crosssections.")
+    for i, K in enumerate(e):
+        elastic_tcs[i] = compute_elastic_tcs(
+                elastic_cs_fn, K.magnitude, 1024)
+
+    outfile.close()
+
+#    print("Reading inelastic scattering cross-sections.")
+#    elf_data = read_elf_data(s.elf_file)
+#    K_bounds = (s.fermi + 0.1 * units.eV, 1e4 * units.eV)
+#    K = np.logspace(
+#        log10(K_bounds[0].to('eV').magnitude),
+#        log10(K_bounds[1].to('eV').magnitude), 1024) * units.eV
+#    w = np.logspace(
+#        log10(elf_data['w0'][0].to('eV').magnitude),
+#        log10(K_bounds[1].to('eV').magnitude / 2), 1024) * units.eV
+#    ics = DCS.from_function(inelastic_cs_fn(s), K[:, None], w)
+#    ics.save_gnuplot('{}_ics.bin'.format(s.name))
