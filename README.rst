@@ -29,7 +29,7 @@ clone the needed repositories::
 
 create a virtual environment::
 
-    > virtualenv -p python3 cstool-env
+    > python3 -m venv cstool-env
     ...
     > source ./cstool-env/bin/activate
     (cstool-env) >
