@@ -31,7 +31,7 @@ def L_Kieft(K, w0, F):
     L1 = 1.5 * log(x1 * x2 / x3)
     L2 = -log(a)
 
-    return np.maximum(0, (a < 0.5) * (w0 < 50 * units.eV) * 1.5 * L1
+    return np.maximum(0, (a < 0.5) * (w0 < 50 * units.eV) * L1
                       + (w0 > 50 * units.eV) * L2)
 
 
