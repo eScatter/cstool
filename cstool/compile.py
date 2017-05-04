@@ -147,3 +147,8 @@ def compute_icdf(f, a, b, n=1024, sampling=100000):
     cf = np.r_[0, np.cumsum((x[1:] - x[:-1]) * (y[:-1] + y[1:]) / 2.0)]
     return np.interp(nx, cf/cf[-1], x)
 
+def compute_tcs(f, a, b, n=1024, sampling=100000):
+    x = np.linspace(a, b, sampling)
+    y = f(x)
+    cf = np.sum((x[1:] - x[:-1]) * (y[:-1] + y[1:]) / 2.0)
+    return cf

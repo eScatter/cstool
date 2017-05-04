@@ -6,7 +6,7 @@ from cstool.mott import s_mott_cs
 from cstool.phonon import phonon_cs_fn
 from cstool.elf import read_elf_data
 from cstool.inelastic import inelastic_cs_fn
-from cstool.compile import compute_icdf
+from cstool.compile import compute_icdf, compute_tcs
 from cslib.noodles import registry
 from cslib import units
 from cslib.dcs import DCS
@@ -57,7 +57,7 @@ def compute_elastic_tcs(dcs, K, n):
     def integrant(theta):
         return dcs(theta, K) * 2 * np.pi * np.sin(theta)
 
-    return compute_icdf(integrant, 0, np.pi, n)
+    return compute_tcs(integrant, 0, np.pi, n), compute_icdf(integrant, 0, np.pi, n)
 
 
 if __name__ == "__main__":
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     phonon_cs = phonon_cs_fn(s)
 
-    @shift(s.fermi.to('eV').magnitude)
+    #@shift(s.fermi.to('eV').magnitude)
     def elastic_cs_fn(a, E):
         return log_interpolate(
             lambda E: phonon_cs(a*units.rad, E*units.eV).to('cm^2').magnitude,
@@ -113,9 +113,11 @@ if __name__ == "__main__":
     energies.attrs['units'] = 'eV'
     elastic_tcs = elastic_grp.create_dataset("table", (129, 1024), dtype='f')
     elastic_tcs.attrs['units'] = 'radian'
+    elastic_tcs_total = elastic_grp.create_dataset("ecs", (129,), dtype='f')
+    elastic_tcs_total.attrs['units'] = 'cm^2'
     print("# Computing elastic total crosssections.")
     for i, K in enumerate(e):
-        elastic_tcs[i] = compute_elastic_tcs(
+        elastic_tcs_total[i], elastic_tcs[i] = compute_elastic_tcs(
                 elastic_cs_fn, K.magnitude, 1024)
 
     outfile.close()
