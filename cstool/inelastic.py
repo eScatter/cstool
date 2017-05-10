@@ -137,6 +137,8 @@ def inelastic_cs(s: Settings, L_method: str='Kieft', K_bounds=None):
     # else:
     #    w0_max = K/2
 
+    elf_data = read_elf_data(s.elf_file)
+
     w = np.logspace(
         log10(elf_data['w0'][0].to('eV').magnitude),
         log10(K_bounds[1].to('eV').magnitude / 2), 1024) * units.eV
