@@ -51,13 +51,13 @@ def compute_elastic_tcs_icdf(dcs, n):
     return compute_tcs_icdf(integrant, 0, np.pi, n)
 
 
-def compute_inelastic_tcs_icdf(dcs, n, K):
+def compute_inelastic_tcs_icdf(dcs, n, K0, K):
     print('.', end='', flush=True)
 
     def integrant(w):
         return dcs(w)
 
-    return compute_tcs_icdf(integrant, 0, K, n)
+    return compute_tcs_icdf(integrant, K0, K, n)
 
 
 if __name__ == "__main__":
@@ -101,7 +101,7 @@ if __name__ == "__main__":
             lambda E: mcs.unsafe(a, E.flat),
             lambda x: x, 100, 200)(E)
 
-    e = np.logspace(-2, 5, 129) * units.eV
+    e = np.logspace(-2, 4, 129) * units.eV
     ecs = DCS(
         mcs.x.to('rad'),
         e[:, None],
@@ -124,14 +124,17 @@ if __name__ == "__main__":
     for i, K in enumerate(e):
         def dcs(theta):
             return elastic_cs_fn(theta, K.magnitude)
-        tcs_icdf = compute_elastic_tcs_icdf(dcs, 1024)
-        el_tcs[i] = tcs_icdf[0]/1e-18
-        el_icdf[i] = tcs_icdf[1]
+        tcs, icdf = compute_elastic_tcs_icdf(dcs, 1024)
+        el_tcs[i] = tcs/1e-18
+        el_icdf[i] = icdf
         #print(el_energies[i], el_tcs[i])
     print()
 
     #plt.loglog(e, 1/np.array(el_tcs))
     #plt.show()
+
+
+    e = np.logspace(np.log10(s.fermi.magnitude+0.1), 4, 129) * units.eV
 
     # inelastic
     inelastic_grp = outfile.create_group("inelastic")
@@ -144,15 +147,20 @@ if __name__ == "__main__":
     inel_icdf.attrs['units'] = 'eV'
     print("# Computing inelastic total cross-sections and iCDFs.")
     for i, K in enumerate(e):
+        w0_max = K/2
+        if True:
+            w0_max = (K - s.fermi)/2
+
         def dcs(w):
             return inelastic_cs_fn(s)(K, w*units.eV)
-        tcs_icdf = compute_inelastic_tcs_icdf(dcs, 1024, K)
-        inel_tcs[i] = tcs_icdf[0]/1e-18
-        inel_icdf[i] = tcs_icdf[1]
-        print(inel_energies[i], inel_tcs[i])
+        # TODO: use a value for n dependent on K
+        tcs, icdf = compute_inelastic_tcs_icdf(dcs, 1024, 1e-4*units.eV, w0_max)
+        inel_tcs[i] = tcs/1e-20 # ???
+        inel_icdf[i] = icdf
+        #print(inel_energies[i], inel_tcs[i])
     print()
 
-    #plt.loglog(e, 1/np.array(inel_tcs))
-    #plt.show()
+    plt.loglog(e, np.array(inel_tcs))
+    plt.show()
 
     outfile.close()

@@ -104,12 +104,12 @@ def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
     mc2 = units.m_e * units.c**2
 
     def cs(K, w):
-        err = np.geterr()
-        np.seterr(all='ignore')
+        #err = np.geterr()
+        #np.seterr(all='ignore')
         result = elf(w) * L(K, w, s.fermi) \
             / (pi * units.a_0 * s.rho_n) \
             / (1 - 1 / (K/mc2 + 1)**2) / mc2
-        np.seterr(**err)
+        #np.seterr(**err)
         return result
 
     return cs
