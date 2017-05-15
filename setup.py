@@ -19,12 +19,14 @@ if has_cython:
     ext_modules = cythonize([Extension(
             "cstool.icdf",
             sources=["src/icdf.cc", "cstool/icdf.pyx"],
-            language="c++")])
+            language="c++",
+            extra_compile_args=["-std=c++11"])])
 else:
     ext_modules = [Extension(
             "cstool.icdf",
             sources=["src/icdf.cc", "cstool/icdf.cpp"],
-            language="c++")]
+            language="c++",
+            extra_compile_args=["-std=c++11"])]
 
 here = path.abspath(path.dirname(__file__))
 
