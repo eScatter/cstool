@@ -48,7 +48,7 @@ def compute_elastic_tcs_icdf(dcs, n):
     def integrant(theta):
         return dcs(theta) * 2 * np.pi * np.sin(theta)
 
-    return compute_tcs_icdf(integrant, 0, np.pi, n)
+    return compute_tcs_icdf(integrant, 0*units('rad'), np.pi*units('rad'), n)
 
 
 def compute_inelastic_tcs_icdf(dcs, n, K0, K):
@@ -117,22 +117,23 @@ if __name__ == "__main__":
     el_energies[:] = e.magnitude
     el_energies.attrs['units'] = 'eV'
     el_tcs = elastic_grp.create_dataset("cross_section", (129,), dtype='f')
-    el_tcs.attrs['units'] = 'nm^2'
+    el_tcs.attrs['units'] = 'm^2'
     el_icdf = elastic_grp.create_dataset("angle_icdf", (129, 1024), dtype='f')
     el_icdf.attrs['units'] = 'radian'
     print("# Computing elastic total cross-sections and iCDFs.")
     for i, K in enumerate(e):
         def dcs(theta):
-            return elastic_cs_fn(theta, K.magnitude)
+            return elastic_cs_fn(theta, K.magnitude)*units('cm^2/rad')
         tcs, icdf = compute_elastic_tcs_icdf(dcs, 1024)
-        el_tcs[i] = tcs/1e-18
+        tcs *= units('cm^2')
+        el_tcs[i] = tcs.to('m^2')
         el_icdf[i] = icdf
-        #print(el_energies[i], el_tcs[i])
     print()
 
-    #plt.loglog(e, 1/np.array(el_tcs))
-    #plt.show()
-
+    # tcst = np.array(el_tcs)*units('m^2')
+    # mfp = (1/(tcst*s.rho_n)).to('Å')
+    # plt.loglog(e, mfp)
+    # plt.show()
 
     e = np.logspace(np.log10(s.fermi.magnitude+0.1), 4, 129) * units.eV
 
@@ -142,7 +143,7 @@ if __name__ == "__main__":
     inel_energies[:] = e.magnitude
     inel_energies.attrs['units'] = 'eV'
     inel_tcs = inelastic_grp.create_dataset("cross_section", (129,), dtype='f')
-    inel_tcs.attrs['units'] = 'nm^2'
+    inel_tcs.attrs['units'] = 'm^2'
     inel_icdf = inelastic_grp.create_dataset("w0_icdf", (129, 1024), dtype='f')
     inel_icdf.attrs['units'] = 'eV'
     print("# Computing inelastic total cross-sections and iCDFs.")
@@ -152,15 +153,17 @@ if __name__ == "__main__":
             w0_max = (K - s.fermi)/2
 
         def dcs(w):
-            return inelastic_cs_fn(s)(K, w*units.eV)
+            return inelastic_cs_fn(s)(K, w*units.eV).to('m^2/eV')
         # TODO: use a value for n dependent on K
         tcs, icdf = compute_inelastic_tcs_icdf(dcs, 1024, 1e-4*units.eV, w0_max)
-        inel_tcs[i] = tcs/1e-20 # ???
+        tcs *= units('m^2')
+        inel_tcs[i] = tcs.to('m^2')
         inel_icdf[i] = icdf
-        #print(inel_energies[i], inel_tcs[i])
     print()
 
-    plt.loglog(e, np.array(inel_tcs))
-    plt.show()
+    # tcst = np.array(inel_tcs)*units('m^2')
+    # mfp = (1/(tcst*s.rho_n)).to('Å')
+    # plt.loglog(e, mfp)
+    # plt.show()
 
     outfile.close()
