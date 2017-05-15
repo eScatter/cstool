@@ -4,9 +4,8 @@ from noodles.display import NCDisplay
 from cstool.parse_input import read_input, pprint_settings, cstool_model
 from cstool.mott import s_mott_cs
 from cstool.phonon import phonon_cs_fn
-from cstool.elf import read_elf_data
 from cstool.inelastic import inelastic_cs_fn
-from cstool.compile import compute_icdf, compute_tcs
+from cstool.compile import compute_tcs_icdf
 from cslib.noodles import registry
 from cslib import units
 from cslib.dcs import DCS
@@ -14,7 +13,8 @@ from cslib.dcs import DCS
 
 import numpy as np
 import h5py as h5
-from numpy import (log10)
+
+import matplotlib.pyplot as plt
 
 
 def log_interpolate(f1, f2, h, a, b):
@@ -42,22 +42,22 @@ def shift(dE):
     return decorator
 
 
-def compute_elastic_tcs(dcs, K, n):
-    """
-    `set_elastic_data(K, dcs(theta): f -> f)`
-    -----------------------------------------
-    dcs_int(theta) := dcs(theta) 2 pi sin(theta)
-    cumulative_dcs(a) := integrate(0, a, dcs_int)
-    tcs = cumulative_dcs(pi) # compute total for normalisation
-    elastic_tcs(log(K)) := log(tcs)
-    icdf(K, P) -> theta | P == cumulative_dcs(theta)/tcs
-    """
+def compute_elastic_tcs_icdf(dcs, n):
     print('.', end='', flush=True)
 
     def integrant(theta):
-        return dcs(theta, K) * 2 * np.pi * np.sin(theta)
+        return dcs(theta) * 2 * np.pi * np.sin(theta)
 
-    return compute_tcs(integrant, 0, np.pi, n), compute_icdf(integrant, 0, np.pi, n)
+    return compute_tcs_icdf(integrant, 0, np.pi, n)
+
+
+def compute_inelastic_tcs_icdf(dcs, n, K0, K):
+    print('.', end='', flush=True)
+
+    def integrant(w):
+        return dcs(w)
+
+    return compute_tcs_icdf(integrant, K0, K, n)
 
 
 if __name__ == "__main__":
@@ -84,52 +84,83 @@ if __name__ == "__main__":
 
     print("# Computing Phonon cross-sections.")
     e = np.logspace(-2, 3, 181) * units.eV
-    cs = phonon_cs_fn(s)(mcs.x, e[:, None])
-    pcs = DCS(mcs.x.to('rad'), e[:, None], cs.to('cm²'), log='y')
+    pcs = DCS(
+        mcs.x.to('rad'),
+        e[:, None],
+        phonon_cs_fn(s)(mcs.x, e[:, None]).to('cm²'),
+        log='y'
+    )
     pcs.save_gnuplot('{}_phonon.bin'.format(s.name))
 
     print("# Merging elastic scattering processes.")
 
-    phonon_cs = phonon_cs_fn(s)
-
     #@shift(s.fermi.to('eV').magnitude)
     def elastic_cs_fn(a, E):
         return log_interpolate(
-            lambda E: phonon_cs(a*units.rad, E*units.eV).to('cm^2').magnitude,
+            lambda E: phonon_cs_fn(s)(a*units.rad, E*units.eV).to('cm^2').magnitude,
             lambda E: mcs.unsafe(a, E.flat),
             lambda x: x, 100, 200)(E)
 
-    e = np.logspace(-2, 5, 129) * units.eV
-    ecs = DCS(mcs.x.to('rad'), e[:, None],
-              elastic_cs_fn(
-                  mcs.x.to('rad').magnitude,
-                  e.to('eV').magnitude[:, None]) * units('cm^2'))
+    e = np.logspace(-2, 4, 129) * units.eV
+    ecs = DCS(
+        mcs.x.to('rad'),
+        e[:, None],
+        elastic_cs_fn(mcs.x.to('rad').magnitude, e.to('eV').magnitude[:, None]) * units('cm^2')
+    )
     ecs.save_gnuplot('{}_ecs.bin'.format(s.name))
 
     outfile = h5.File("{}.mat.hdf5".format(s.name), 'w')
+
+    # elastic
     elastic_grp = outfile.create_group("elastic")
-    energies = elastic_grp.create_dataset("energy", (129,), dtype='f')
-    energies[:] = e.magnitude
-    energies.attrs['units'] = 'eV'
-    elastic_tcs = elastic_grp.create_dataset("table", (129, 1024), dtype='f')
-    elastic_tcs.attrs['units'] = 'radian'
-    elastic_tcs_total = elastic_grp.create_dataset("ecs", (129,), dtype='f')
-    elastic_tcs_total.attrs['units'] = 'cm^2'
-    print("# Computing elastic total crosssections.")
+    el_energies = elastic_grp.create_dataset("energy", (129,), dtype='f')
+    el_energies[:] = e.magnitude
+    el_energies.attrs['units'] = 'eV'
+    el_tcs = elastic_grp.create_dataset("cross_section", (129,), dtype='f')
+    el_tcs.attrs['units'] = 'nm^2'
+    el_icdf = elastic_grp.create_dataset("angle_icdf", (129, 1024), dtype='f')
+    el_icdf.attrs['units'] = 'radian'
+    print("# Computing elastic total cross-sections and iCDFs.")
     for i, K in enumerate(e):
-        elastic_tcs_total[i], elastic_tcs[i] = compute_elastic_tcs(
-                elastic_cs_fn, K.magnitude, 1024)
+        def dcs(theta):
+            return elastic_cs_fn(theta, K.magnitude)
+        tcs, icdf = compute_elastic_tcs_icdf(dcs, 1024)
+        el_tcs[i] = tcs/1e-18
+        el_icdf[i] = icdf
+        #print(el_energies[i], el_tcs[i])
+    print()
+
+    #plt.loglog(e, 1/np.array(el_tcs))
+    #plt.show()
+
+
+    e = np.logspace(np.log10(s.fermi.magnitude+0.1), 4, 129) * units.eV
+
+    # inelastic
+    inelastic_grp = outfile.create_group("inelastic")
+    inel_energies = inelastic_grp.create_dataset("energy", (129,), dtype='f')
+    inel_energies[:] = e.magnitude
+    inel_energies.attrs['units'] = 'eV'
+    inel_tcs = inelastic_grp.create_dataset("cross_section", (129,), dtype='f')
+    inel_tcs.attrs['units'] = 'nm^2'
+    inel_icdf = inelastic_grp.create_dataset("w0_icdf", (129, 1024), dtype='f')
+    inel_icdf.attrs['units'] = 'eV'
+    print("# Computing inelastic total cross-sections and iCDFs.")
+    for i, K in enumerate(e):
+        w0_max = K/2
+        if True:
+            w0_max = (K - s.fermi)/2
+
+        def dcs(w):
+            return inelastic_cs_fn(s)(K, w*units.eV)
+        # TODO: use a value for n dependent on K
+        tcs, icdf = compute_inelastic_tcs_icdf(dcs, 1024, 1e-4*units.eV, w0_max)
+        inel_tcs[i] = tcs/1e-20 # ???
+        inel_icdf[i] = icdf
+        #print(inel_energies[i], inel_tcs[i])
+    print()
+
+    plt.loglog(e, np.array(inel_tcs))
+    plt.show()
 
     outfile.close()
-
-#    print("Reading inelastic scattering cross-sections.")
-#    elf_data = read_elf_data(s.elf_file)
-#    K_bounds = (s.fermi + 0.1 * units.eV, 1e4 * units.eV)
-#    K = np.logspace(
-#        log10(K_bounds[0].to('eV').magnitude),
-#        log10(K_bounds[1].to('eV').magnitude), 1024) * units.eV
-#    w = np.logspace(
-#        log10(elf_data['w0'][0].to('eV').magnitude),
-#        log10(K_bounds[1].to('eV').magnitude / 2), 1024) * units.eV
-#    ics = DCS.from_function(inelastic_cs_fn(s), K[:, None], w)
-#    ics.save_gnuplot('{}_ics.bin'.format(s.name))

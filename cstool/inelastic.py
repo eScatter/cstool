@@ -31,7 +31,7 @@ def L_Kieft(K, w0, F):
     L1 = 1.5 * log(x1 * x2 / x3)
     L2 = -log(a)
 
-    return np.maximum(0, (a < 0.5) * (w0 < 50 * units.eV) * 1.5 * L1
+    return np.maximum(0, (a < 0.5) * (w0 < 50 * units.eV) * L1
                       + (w0 > 50 * units.eV) * L2)
 
 
@@ -104,12 +104,12 @@ def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
     mc2 = units.m_e * units.c**2
 
     def cs(K, w):
-        err = np.geterr()
-        np.seterr(all='ignore')
+        #err = np.geterr()
+        #np.seterr(all='ignore')
         result = elf(w) * L(K, w, s.fermi) \
             / (pi * units.a_0 * s.rho_n) \
             / (1 - 1 / (K/mc2 + 1)**2) / mc2
-        np.seterr(**err)
+        #np.seterr(**err)
         return result
 
     return cs
@@ -136,6 +136,8 @@ def inelastic_cs(s: Settings, L_method: str='Kieft', K_bounds=None):
     #    w0_max = K - s.fermi
     # else:
     #    w0_max = K/2
+
+    elf_data = read_elf_data(s.elf_file)
 
     w = np.logspace(
         log10(elf_data['w0'][0].to('eV').magnitude),
