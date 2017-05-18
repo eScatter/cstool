@@ -145,4 +145,6 @@ def compute_tcs_icdf(f, a, b, n=1024, sampling=100000):
     nx = np.linspace(0, 1, n)
     y = f(x)
     cf = np.r_[0, np.cumsum((x[1:] - x[:-1]) * (y[:-1] + y[1:]) / 2.0)]
+    if cf[-1]==0:
+        return cf[-1], np.zeros(n)
     return cf[-1], np.interp(nx, cf/cf[-1], x)

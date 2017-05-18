@@ -14,7 +14,7 @@ from cslib.dcs import DCS
 import numpy as np
 import h5py as h5
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 
 def log_interpolate(f1, f2, h, a, b):
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     # plt.loglog(e, mfp)
     # plt.show()
 
-    e = np.logspace(np.log10(s.fermi.magnitude+0.1), 4, 129) * units.eV
+    e = np.logspace(-1, 4, 129) * units.eV
 
     # inelastic
     inelastic_grp = outfile.create_group("inelastic")
@@ -148,9 +148,9 @@ if __name__ == "__main__":
     inel_icdf.attrs['units'] = 'eV'
     print("# Computing inelastic total cross-sections and iCDFs.")
     for i, K in enumerate(e):
-        w0_max = K/2
-        if True:
-            w0_max = (K - s.fermi)/2
+        w0_max = K/2 # this is true in the Kieft model
+        # this bound has to be set to be able to calculate the mfp up to two
+        # times the highest tabulated energy loss in the ELF
 
         def dcs(w):
             return inelastic_cs_fn(s)(K, w*units.eV).to('m^2/eV')

@@ -22,16 +22,35 @@ def L_Kieft(K, w0, F):
         Fermi energy
     """
     a = w0 / K          # dimensionless
-    x1 = 2/a*(1 + sqrt(1 - 2*a)) - 1
-    x2 = K - F - w0     # energy
-    x3 = K - F + w0
+    #L1 = np.zeros(len(w0))
+    #for i, w in enumerate(w0):
+    #    a = w/K
+    #    # a < 0.5 test to make sure x1 will be a real number:
+    #    if a < 0.5:
+    #        x1 = 2/a*(1 + sqrt(1 - 2*a)) - 1
+    #        # check if K > F and K - F - w0 > 0:
+    #        if (K > F) and ((K - F) > w):
+    #            x2 = K - F - w     # energy
+    #            x3 = K - F + w
 
-    # this was log(x1) + log(x2) - log(x3), but this should be faster,
-    # and also we take logarithms of a dimensionless quantity now.
-    L1 = 1.5 * log(x1 * x2 / x3)
-    L2 = -log(a)
+    #            L1[i] = 1.5 * log(x1 * x2 / x3)
 
-    return np.maximum(0, (a < 0.5) * (w0 < 50 * units.eV) * L1
+    # Here we have  added a few test, so that x1, x2 and x3 are always > 0
+    # also in the regimes where L1 should be zero. This is necessary,
+    # because even when L1 = 0, the definition of L1 still contains the log()
+    # if x1, x2 or x3 < 0, this will result in an error. So the tests are used
+    # to prevent the calcuation of log(X) with X <= 0
+    # returns x1 for a < 0.5 and 1 for x1 > 0.5
+    x1 = (2/a*(1 + sqrt(1 - 2*a * (a < 0.5))) - 1) * (a < 0.5) + (a >= 0.5)
+    # returns x2 for K - F > w0 and 1 for K - F < w0
+    x2 = (K - F - w0) * ((K-F) > w0) + ((K-F) <= w0) * units('eV')
+    # returns x3 for K > F and 1 for K < F
+    x3 = (K - F + w0) * (K > F) + (K <= F) * units('eV')
+    # returns L1 when (a < 0.5), (K-F > w0) and (K > F) and zero otherwise
+    L1 = 1.5 * log(x1 * x2 / x3) * (a < 0.5) * ((K-F) > w0) * (K > F)
+    L2 = -log(a) * ((K - F) > w0)
+
+    return np.maximum(0, (w0 < 50 * units.eV) * L1
                       + (w0 > 50 * units.eV) * L2)
 
 
