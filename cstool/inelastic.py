@@ -83,7 +83,8 @@ def loglog_interpolate(x_i, y_i):
     log_y_i = np.log(y_i)
 
     def f(x):
-        x_idx = np.searchsorted(x_i.flat, x.to(x_i.units).flat)
+        x_idx = np.searchsorted(x_i.magnitude.flat,
+                                x.to(x_i.units).magnitude.flat)
         mx_idx = np.ma.array(
             x_idx - 1,
             mask=np.logical_or(x_idx == 0,
