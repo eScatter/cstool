@@ -1,4 +1,4 @@
-from .elf import read_elf_data
+from cstool.elf import read_elf_data
 
 from cslib import (units, Settings, DCS)
 from numpy import (log, sqrt, log10, pi)
@@ -74,13 +74,12 @@ methods = {
 
 def loglog_interpolate(x_i, y_i):
     """Interpolates the tabulated values. Linear interpolation
-    on a log-log scale. Requires `y_i` to be unitless."""
+    on a log-log scale."""
 
-    assert y_i.dimensionless, "y_i should be dimensionless"
     assert y_i.shape == x_i.shape, "shapes should match"
 
     x_log_steps = np.log(x_i[1:]/x_i[:-1])
-    log_y_i = np.log(y_i)
+    log_y_i = np.log(y_i.magnitude)
 
     def f(x):
         x_idx = np.searchsorted(x_i.magnitude.flat,
@@ -170,8 +169,7 @@ def inelastic_cs(s: Settings, L_method: str='Kieft', K_bounds=None):
 
 if __name__ == "__main__":
     import sys
-    from . import read_input
-
+    from .parse_input import read_input
     s = read_input(sys.argv[1])
 
     elf_data = read_elf_data(s.elf_file)
