@@ -70,7 +70,7 @@ def s_mott_cs(material: Settings, energies, split=4, mabs=False):
     """
     def split_array(a, n):
         m = np.arange(0, a.size, a.size/n)[1:].astype(int)
-        return [b * a.units for b in np.split(a, m)]
+        return np.split(a, m)
 
     chunks = split_array(energies, split)
 
