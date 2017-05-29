@@ -74,7 +74,9 @@ methods = {
 
 def loglog_interpolate(x_i, y_i):
     """Interpolates the tabulated values. Linear interpolation
-    on a log-log scale."""
+    on a log-log scale.
+    Out-of-range behaviour: extrapolation if x is too high, and
+    zero if x is too low."""
 
     assert y_i.shape == x_i.shape, "shapes should match"
 
@@ -84,30 +86,24 @@ def loglog_interpolate(x_i, y_i):
     def f(x):
         x_idx = np.searchsorted(x_i.magnitude.flat,
                                 x.to(x_i.units).magnitude.flat)
-        mx_idx = np.ma.array(
-            x_idx - 1,
-            mask=np.logical_or(x_idx == 0,
-                               x_idx == x.size))
+        mx_idx = np.clip(x_idx - 1, 0, x_i.size - 2)
 
         # compute the weight factor
-        w = np.log(x / (np.ma.take(x_i, mx_idx) * x_i.units)) \
-            / np.ma.take(x_log_steps, mx_idx)
+        w = np.log(x / np.take(x_i, mx_idx)) \
+            / np.take(x_log_steps, mx_idx)
 
-        # take elements from a masked NdArray
-        def take(a, *ix):
-            i = np.meshgrid(*ix[::-1])[::-1]
-            m = reduce(np.logical_or, [j.mask for j in i])
-            return np.ma.array(a[[j.filled(0) for j in i]], mask=m)
+        y = (1 - w) * np.take(log_y_i, mx_idx) \
+            + w * np.take(log_y_i, mx_idx + 1)
 
-        y = (1 - w) * take(log_y_i, mx_idx) \
-            + w * take(log_y_i, mx_idx + 1)
-
-        return np.exp(y).filled(0) * y_i.units
+        # y is extrapolated on both sides. We want extrapolation
+        # for high energy (where a power law is expected), but for low
+        # energies we don't know anything, so we want no energy loss.
+        return (x_idx != 0) * np.exp(y) * y_i.units
 
     return f
 
 
-def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
+def inelastic_cs_fn(s: Settings, print_bool=False, L_method: str='Kieft'):
     """Returns a function giving differential cross-sections for
     inelastic scattering, based on the data in the ELF files and
     an extrapolation function `L`, for which there are three options:
@@ -118,7 +114,7 @@ def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
 
     L = methods[L_method]
 
-    elf_data = read_elf_data(s.elf_file)
+    elf_data = read_elf_data(s.elf_file, print_bool)
     elf = loglog_interpolate(elf_data['w0'], elf_data['elf'])
     mc2 = units.m_e * units.c**2
 
