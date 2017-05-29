@@ -148,9 +148,9 @@ if __name__ == "__main__":
     inel_icdf.attrs['units'] = 'eV'
     print("# Computing inelastic total cross-sections and iCDFs.")
     for i, K in enumerate(e):
-        w0_max = K/2 # this is true in the Kieft model
-        # this bound has to be set to be able to calculate the mfp up to two
-        # times the highest tabulated energy loss in the ELF
+        w0_max = K-F # it is not possible to lose so much energy that the
+        # primary electron ends up below the Fermi level in an inelastic
+        # scattering event
 
         def dcs(w):
             return inelastic_cs_fn(s)(K, w*units.eV).to('m^2/eV')
