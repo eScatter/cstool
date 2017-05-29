@@ -148,7 +148,7 @@ if __name__ == "__main__":
     inel_icdf.attrs['units'] = 'eV'
     print("# Computing inelastic total cross-sections and iCDFs.")
     for i, K in enumerate(e):
-        w0_max = K-F # it is not possible to lose so much energy that the
+        w0_max = K-s.fermi # it is not possible to lose so much energy that the
         # primary electron ends up below the Fermi level in an inelastic
         # scattering event
 
