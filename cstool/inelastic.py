@@ -103,7 +103,7 @@ def loglog_interpolate(x_i, y_i):
     return f
 
 
-def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
+def inelastic_cs_fn(s: Settings, print_bool=False, L_method: str='Kieft'):
     """Returns a function giving differential cross-sections for
     inelastic scattering, based on the data in the ELF files and
     an extrapolation function `L`, for which there are three options:
@@ -114,7 +114,7 @@ def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
 
     L = methods[L_method]
 
-    elf_data = read_elf_data(s.elf_file)
+    elf_data = read_elf_data(s.elf_file, print_bool)
     elf = loglog_interpolate(elf_data['w0'], elf_data['elf'])
     mc2 = units.m_e * units.c**2
 

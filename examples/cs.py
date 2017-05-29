@@ -147,15 +147,17 @@ if __name__ == "__main__":
     inel_icdf = inelastic_grp.create_dataset("w0_icdf", (129, 1024), dtype='f')
     inel_icdf.attrs['units'] = 'eV'
     print("# Computing inelastic total cross-sections and iCDFs.")
+    bool_ELF_limits_warning = True
     for i, K in enumerate(e):
         w0_max = K-s.fermi # it is not possible to lose so much energy that the
         # primary electron ends up below the Fermi level in an inelastic
         # scattering event
 
         def dcs(w):
-            return inelastic_cs_fn(s)(K, w*units.eV).to('m^2/eV')
+            return inelastic_cs_fn(s,print_bool=bool_ELF_limits_warning)(K, w*units.eV).to('m^2/eV')
         # TODO: use a value for n dependent on K
         tcs, icdf = compute_inelastic_tcs_icdf(dcs, 1024, 1e-4*units.eV, w0_max)
+        bool_ELF_limits_warning = False
         tcs *= units('m^2')
         inel_tcs[i] = tcs.to('m^2')
         inel_icdf[i] = icdf
