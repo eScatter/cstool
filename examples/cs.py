@@ -4,9 +4,10 @@ from noodles.display import NCDisplay
 from cstool.parse_input import read_input, pprint_settings, cstool_model
 from cstool.mott import s_mott_cs
 from cstool.phonon import phonon_cs_fn
-from cstool.inelastic import inelastic_cs_fn, loglog_interpolate
+from cstool.inelastic import inelastic_cs_fn
 from cstool.compile import compute_tcs_icdf
-from cstool.ionization import ionization_shells, outer_shell_energies
+from cstool.ionization import ionization_shells, outer_shell_energies, \
+                              loglog_interpolate as ion_loglog_interp
 from cslib.noodles import registry
 from cslib import units
 from cslib.dcs import DCS
@@ -121,17 +122,15 @@ if __name__ == "__main__":
     inel_icdf = inelastic_grp.create_dataset("w0_icdf", (e_inel.shape[0], p_inel.shape[0]))
     inel_icdf.attrs['units'] = 'eV'
     print("# Computing inelastic total cross-sections and iCDFs.")
-    bool_ELF_limits_warning = True
     for i, K in enumerate(e_inel):
         w0_max = K-s.fermi # it is not possible to lose so much energy that the
         # primary electron ends up below the Fermi level in an inelastic
         # scattering event
 
         def dcs(w):
-            return inelastic_cs_fn(s, print_bool=bool_ELF_limits_warning)(K, w)
+            return inelastic_cs_fn(s)(K, w)
         tcs, icdf = compute_inelastic_tcs_icdf(dcs, p_inel,
                                                1e-4*units.eV, w0_max)
-        bool_ELF_limits_warning = False
         inel_tcs[i] = tcs.to('m^2')
         inel_icdf[i] = icdf.to('eV')
         print('.', end='', flush=True)
@@ -149,7 +148,7 @@ if __name__ == "__main__":
         shell['tcs_at_K'] = np.zeros(e_ion.shape) * units('m^2')
         i_able = (e_ion > shell['E_bind'])
         j_able = (shell['K'] > shell['E_bind'])
-        shell['tcs_at_K'][i_able] = loglog_interpolate(
+        shell['tcs_at_K'][i_able] = ion_loglog_interp(
             shell['K'][j_able], shell['tcs'][j_able])(e_ion[i_able]).to('m^2')
         tcstot_at_K += shell['tcs_at_K']
 

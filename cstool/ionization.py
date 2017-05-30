@@ -5,6 +5,40 @@ from cslib import units, Settings
 
 import numpy as np
 import os
+from warnings import warn
+
+
+def loglog_interpolate(x_i, y_i):
+    """Interpolates the tabulated values. Linear interpolation
+    on a log-log scale.
+    Out-of-range behaviour: extrapolation if x is too high, and
+    zero if x is too low."""
+
+    assert y_i.shape == x_i.shape, "shapes should match"
+
+    x_log_steps = np.log(x_i[1:]/x_i[:-1])
+    log_y_i = np.log(y_i.magnitude)
+
+    def f(x):
+        x_idx = np.searchsorted(x_i.magnitude.flat,
+                                x.to(x_i.units).magnitude.flat)
+        mx_idx = np.clip(x_idx - 1, 0, x_i.size - 2)
+
+        # compute the weight factor
+        w = np.log(x / np.take(x_i, mx_idx)) \
+            / np.take(x_log_steps, mx_idx)
+
+        y = (1 - w) * np.take(log_y_i, mx_idx) \
+            + w * np.take(log_y_i, mx_idx + 1)
+
+        if np.any(x_idx == x_i.size):
+            warn("Extrapolating ionization cross section above upper bound ({})."
+                 .format(x_i.flatten()[-1]))
+
+        # Below the lower bound, return 0. Above the upper bound, extrapolate.
+        return (x_idx != 0) * np.exp(y) * y_i.units
+
+    return f
 
 
 def _ionization_shells(Z):

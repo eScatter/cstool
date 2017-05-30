@@ -4,8 +4,7 @@ from cslib import (units, Settings, DCS)
 from numpy import (log, sqrt, log10, pi)
 
 import numpy as np
-from functools import reduce
-
+from warnings import warn
 
 def L_Kieft(K, w0, F):
     """Computes electron cross-sections for inelastic scattering from
@@ -95,15 +94,19 @@ def loglog_interpolate(x_i, y_i):
         y = (1 - w) * np.take(log_y_i, mx_idx) \
             + w * np.take(log_y_i, mx_idx + 1)
 
-        # y is extrapolated on both sides. We want extrapolation
-        # for high energy (where a power law is expected), but for low
+        if np.any(x_idx == x_i.size):
+            warn("Extrapolating ELF data above upper bound ({})."
+                 .format(x_i.flatten()[-1]))
+
+        # Below the lower bound, return 0. Above the upper bound, extrapolate.
+        # For high energy, a power law is expected, but for low
         # energies we don't know anything, so we want no energy loss.
         return (x_idx != 0) * np.exp(y) * y_i.units
 
     return f
 
 
-def inelastic_cs_fn(s: Settings, print_bool=False, L_method: str='Kieft'):
+def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
     """Returns a function giving differential cross-sections for
     inelastic scattering, based on the data in the ELF files and
     an extrapolation function `L`, for which there are three options:
@@ -114,7 +117,7 @@ def inelastic_cs_fn(s: Settings, print_bool=False, L_method: str='Kieft'):
 
     L = methods[L_method]
 
-    elf_data = read_elf_data(s.elf_file, print_bool)
+    elf_data = read_elf_data(s.elf_file)
     elf = loglog_interpolate(elf_data['w0'], elf_data['elf'])
     mc2 = units.m_e * units.c**2
 
