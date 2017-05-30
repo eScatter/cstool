@@ -68,13 +68,25 @@ if __name__ == "__main__":
             lambda x: x, 100*units.eV, 200*units.eV
         )(E)*units('cm^2/rad')
 
+    properties = {
+        'fermi': (s.fermi, 'eV'),
+        'work_func': (s.work_func, 'eV'),
+        'band_gap': (s.band_gap, 'eV'),
+        'phonon_loss': (s.phonon.energy_loss, 'eV'),
+        'density': (s.rho_n, 'm^-3')
+    }
+
     # write output
     outfile = h5.File("{}.mat.hdf5".format(s.name), 'w')
-    outfile.attrs['fermi'] = str(s.fermi.to('eV').magnitude)
-    outfile.attrs['work_func'] = str(s.work_func.to('eV').magnitude)
-    outfile.attrs['band_gap'] = str(s.band_gap.to('eV').magnitude)
-    outfile.attrs['phonon_loss'] = str(s.phonon.energy_loss.to('eV').magnitude)
-    outfile.attrs['density'] = str(s.rho_n.to('1/(m^3)').magnitude)
+
+    hdf_properties = outfile.create_dataset(
+        "properties", (len(properties),), dtype=np.dtype([
+            ('name', h5.special_dtype(vlen=bytes)),
+            ('value', float),
+            ('unit', h5.special_dtype(vlen=bytes))
+        ]))
+    for i, (name, value) in enumerate(properties.items()):
+        hdf_properties[i] = (name, value[0].to(value[1]).magnitude, value[1])
 
     # elastic
     e_el = np.logspace(-2, 4, 129) * units.eV
