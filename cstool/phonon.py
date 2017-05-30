@@ -251,7 +251,7 @@ if __name__ == "__main__":
         description='Calculate elastic phonon cross-sections for a material.')
     parser.add_argument(
         'material_file', type=str,
-        help="Filename of material in JSON format.")
+        help="Filename of material in YAML format.")
     args = parser.parse_args()
 
     s = read_input(args.material_file)

@@ -140,11 +140,10 @@ Given this structure the `.mat` file format looks like:
 import numpy as np
 
 
-def compute_tcs_icdf(f, a, b, n=1024, sampling=100000):
-    x = np.linspace(a, b, sampling)
-    nx = np.linspace(0, 1, n)
+def compute_tcs_icdf(f, a, b, P, sampling=100000):
+    x = np.linspace(a, b.to(a.units), sampling) * a.units
     y = f(x)
     cf = np.r_[0, np.cumsum((x[1:] - x[:-1]) * (y[:-1] + y[1:]) / 2.0)]
     if cf[-1]==0:
-        return cf[-1], np.zeros(n)
-    return cf[-1], np.interp(nx, cf/cf[-1], x)
+        return 0 * x.units*y.units, np.zeros_like(P) * x.units
+    return cf[-1] * x.units*y.units, np.interp(P, cf/cf[-1], x) * x.units
