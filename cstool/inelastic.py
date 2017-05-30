@@ -11,8 +11,8 @@ def L_Kieft(K, w0, F):
     """Computes electron cross-sections for inelastic scattering from
     optical data. Model from Kieft & Bosch (2008).
 
-    If used with Numpy arrays and two-dimensional output is required,
-    use a column vector for `K` and a row vector for `w0`.
+    Typically called with a scalar parameter for K and a numpy array
+    for w0. Returns a numpy array, where each value corresponds to a w0.
 
     :param K:
         Kinetic energy of electron.
@@ -21,34 +21,23 @@ def L_Kieft(K, w0, F):
     :param F:
         Fermi energy
     """
-    a = w0 / K          # dimensionless
-    #L1 = np.zeros(len(w0))
-    #for i, w in enumerate(w0):
-    #    a = w/K
-    #    # a < 0.5 test to make sure x1 will be a real number:
-    #    if a < 0.5:
-    #        x1 = 2/a*(1 + sqrt(1 - 2*a)) - 1
-    #        # check if K > F and K - F - w0 > 0:
-    #        if (K > F) and ((K - F) > w):
-    #            x2 = K - F - w     # energy
-    #            x3 = K - F + w
 
-    #            L1[i] = 1.5 * log(x1 * x2 / x3)
+    # For sqrt & log calls, we have to strip the units. pint does not like "where".
 
-    # Here we have  added a few test, so that x1, x2 and x3 are always > 0
-    # also in the regimes where L1 should be zero. This is necessary,
-    # because even when L1 = 0, the definition of L1 still contains the log()
-    # if x1, x2 or x3 < 0, this will result in an error. So the tests are used
-    # to prevent the calcuation of log(X) with X <= 0
-    # returns x1 for a < 0.5 and 1 for x1 > 0.5
-    x1 = (2/a*(1 + sqrt(1 - 2*a * (a < 0.5))) - 1) * (a < 0.5) + (a >= 0.5)
-    # returns x2 for K - F > w0 and 1 for K - F < w0
-    x2 = (K - F - w0) * ((K-F) > w0) + ((K-F) <= w0) * units('eV')
-    # returns x3 for K > F and 1 for K < F
-    x3 = (K - F + w0) * (K > F) + (K <= F) * units('eV')
-    # returns L1 when (a < 0.5), (K-F > w0) and (K > F) and zero otherwise
-    L1 = 1.5 * log(x1 * x2 / x3) * (a < 0.5) * ((K-F) > w0) * (K > F)
-    L2 = -log(a) * ((K - F) > w0)
+    a = w0 / K
+    s = sqrt((1 - 2*a).magnitude, where = (a <= .5)) * (a <= .5)
+
+    L1_range = (a > 0) * (a < .5) * (K-F > w0) * (K > F)
+    L2_range = (a >= .5) * (K-F > w0) * (K > F)
+
+    # Calculate L1
+    x1 = 2/a * (1 + s) - 1
+    x2 = K - F - w0
+    x3 = K - F + w0
+    L1 = 1.5 * log((x1 * x2 / x3).magnitude, where = L1_range) * L1_range
+
+    # Calculate L2
+    L2 = -log(a.magnitude, where = L2_range) * L2_range
 
     return np.maximum(0, (w0 < 50 * units.eV) * L1
                       + (w0 > 50 * units.eV) * L2)
@@ -88,8 +77,9 @@ def loglog_interpolate(x_i, y_i):
         x_idx = np.searchsorted(x_i.flat, x.to(x_i.units).flat)
         mx_idx = np.clip(x_idx - 1, 0, x_i.size - 2)
 
-        # compute the weight factor
-        w = np.log(x / np.take(x_i, mx_idx)) \
+        # compute the weight factor.
+        # Have to strip the units here, because pint does not like "where".
+        w = log((x / np.take(x_i, mx_idx)).magnitude, where=x>0*x.units) \
             / np.take(x_log_steps, mx_idx)
 
         y = (1 - w) * np.take(log_y_i, mx_idx) \
