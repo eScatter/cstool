@@ -1,0 +1,10 @@
+language: python
+sudo: false
+python:
+  - "3.5"
+install:
+  - pip install -U git+https://github.com/eScatter/cslib.git
+  - pip install -U git+https://github.com/eScatter/pyelsepa.git
+  - pip install -U .
+script:
+  - pytest test
