@@ -1,0 +1,16 @@
+name:           gold
+rho_m:          19.30 g/cm³
+fermi:          5.53 eV
+work_func:      5.4 eV
+band_gap:       0 eV
+elf_file:       data/elf/df_Au.dat
+
+phonon:
+    model:      single
+    lattice:    4.079 Å
+    single:
+        c_s:    2.03 km/s
+        eps_ac: 8.92 eV
+
+elements:
+    Au: { count: 1, Z: 79, M: 196.97 g/mol }

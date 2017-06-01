@@ -1,0 +1,16 @@
+name:           copper
+rho_m:          8.96 g/cm³
+fermi:          7.0 eV
+work_func:      4.53 eV
+band_gap:       0 eV
+elf_file:       data/elf/df_Cu.dat
+
+phonon:
+    model:      single
+    lattice:    3.610 Å
+    single:
+        c_s:    4.6 km/s
+        eps_ac: 8.92 eV
+
+elements:
+    Au: { count: 1, Z: 29, M: 63.546 g/mol }
