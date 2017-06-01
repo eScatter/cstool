@@ -47,7 +47,7 @@ def test_phonon_cs_fn_single():
     fn = phonon_cs_fn(settings)
     W = np.logspace(-2, 3, 100) * units.eV
     theta = np.linspace(0, np.pi, 100) * units.rad
-    cs = fn(W[:, None], theta)
+    cs = fn(theta, W[:, None])
 
     assert cs.shape == (100, 100)
     assert cs.dimensionality == units('m²/sr').dimensionality
@@ -63,7 +63,7 @@ def test_phonon_cs_fn_dual():
     fn = phonon_cs_fn(settings)
     W = np.logspace(-2, 3, 100) * units.eV
     theta = np.linspace(0, np.pi, 100) * units.rad
-    cs = fn(W[:, None], theta)
+    cs = fn(theta, W[:, None])
 
     assert cs.shape == (100, 100)
     assert cs.dimensionality == units('m²/sr').dimensionality
