@@ -1,32 +1,9 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-from distutils.command.build_clib import build_clib
-from distutils.extension import Extension
-
-try:
-    from Cython.Build import cythonize
-except ImportError:
-    has_cython = False
-else:
-    has_cython = True
-
 from os import path
 from codecs import open
 
-
-if has_cython:
-    ext_modules = cythonize([Extension(
-            "cstool.icdf",
-            sources=["src/icdf.cc", "cstool/icdf.pyx"],
-            language="c++",
-            extra_compile_args=["-std=c++11"])])
-else:
-    ext_modules = [Extension(
-            "cstool.icdf",
-            sources=["src/icdf.cc", "cstool/icdf.cpp"],
-            language="c++",
-            extra_compile_args=["-std=c++11"])]
 
 here = path.abspath(path.dirname(__file__))
 
@@ -59,9 +36,6 @@ setup(
         'ruamel.yaml'],
     extras_require={
         'test': ['pytest', 'pytest-cov', 'pep8', 'pyflakes'],
-        'dev': [
-            'pytest', 'pytest-cov', 'pep8', 'pyflakes', 'sphinx',
-            'cython'],
-    },
-    ext_modules=ext_modules
+        'dev': ['pytest', 'pytest-cov', 'pep8', 'pyflakes', 'sphinx'],
+    }
 )
