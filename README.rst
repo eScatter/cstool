@@ -10,6 +10,9 @@ the place to do it.
 Currently, this module needs both the `pyelsepa` and `cslib` packages to be installed,
 preferably in a VirtualEnv (so that you don't muck-up your Python installation).
 
+.. image:: https://travis-ci.org/eScatter/cstool.svg?branch=master
+    :target: https://travis-ci.org/eScatter/cstool
+
 Installing
 ==========
 
