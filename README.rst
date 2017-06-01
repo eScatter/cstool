@@ -10,6 +10,9 @@ the place to do it.
 Currently, this module needs both the `pyelsepa` and `cslib` packages to be installed,
 preferably in a VirtualEnv (so that you don't muck-up your Python installation).
 
+.. image:: https://travis-ci.org/eScatter/cstool.svg?branch=master
+    :target: https://travis-ci.org/eScatter/cstool
+
 Installing
 ==========
 
@@ -29,7 +32,7 @@ clone the needed repositories::
 
 create a virtual environment::
 
-    > virtualenv -p python3 cstool-env
+    > python3 -m venv cstool-env
     ...
     > source ./cstool-env/bin/activate
     (cstool-env) >
