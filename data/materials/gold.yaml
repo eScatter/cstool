@@ -1,9 +1,11 @@
 name:           gold
 rho_m:          19.30 g/cm³
-fermi:          5.53 eV
-work_func:      5.4 eV
-band_gap:       0 eV
 elf_file:       data/elf/df_Au.dat
+
+band_structure:
+    model:      metal
+    fermi:      5.53 eV
+    work_func:  5.4 eV
 
 phonon:
     model:      single

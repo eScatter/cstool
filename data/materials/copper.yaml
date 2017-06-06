@@ -1,9 +1,11 @@
 name:           copper
 rho_m:          8.96 g/cm³
-fermi:          7.0 eV
-work_func:      4.53 eV
-band_gap:       0 eV
 elf_file:       data/elf/df_Cu.dat
+
+band_structure:
+    model:      metal
+    fermi:      7.0 eV
+    work_func:  4.53 eV
 
 phonon:
     model:      single

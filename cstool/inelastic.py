@@ -114,7 +114,7 @@ def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
     def cs(K, w):
         #err = np.geterr()
         #np.seterr(all='ignore')
-        result = elf(w) * L(K, w, s.fermi) \
+        result = elf(w) * L(K, w, s.band_structure.fermi) \
             / (pi * units.a_0 * s.rho_n) \
             / (1 - 1 / (K/mc2 + 1)**2) / mc2
         #np.seterr(**err)
@@ -132,7 +132,7 @@ def inelastic_cs(s: Settings, L_method: str='Kieft', K_bounds=None):
     print("Inelastic cross-sections")
     print("========================")
 
-    K_bounds = K_bounds or (s.fermi + 0.1 * units.eV, 1e4 * units.eV)
+    K_bounds = K_bounds or (s.band_structure.fermi + 0.1 * units.eV, 1e4 * units.eV)
     print("Bounds: {k[0].magnitude:.2e} - {k[1].magnitude:.2e}"
           " {k[0].units:~P}".format(k=K_bounds))
 

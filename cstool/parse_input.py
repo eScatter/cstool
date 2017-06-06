@@ -96,15 +96,63 @@ def phonon_check(s: Settings):
 
     return False
 
+@predicate("Consistent energy diagram")
+def energy_check(s: Settings):
+    if s.model == 'insulator' or s.model == 'semiconductor':
+        if 'band_gap' in s and 'affinity' in s and 'work_func' not in s:
+            return True
+
+    if s.model == 'metal':
+        if 'band_gap' not in s and 'affinity' not in s and 'work_func' in s:
+            return True
+
+    return False
+
+def get_barrier(s: Settings):
+    if s.model == 'insulator' or s.model == 'semiconductor':
+        if s.fermi > 0*units.eV:
+            return s.fermi + s.band_gap/2 + s.affinity
+        else:
+            return s.band_gap + s.affinity
+
+    if s.model == 'metal':
+        return s.fermi + s.work_func
+
+    # It should be impossible to get here, s.model is checked to be insul/semic/metal
+    return 0*units.eV
+
+band_structure_model = Model([
+    ('model',     Type(
+        "Whether the material is of `insulator`, `semiconductor` or `metal` type."
+        " Insulators and semiconductors are treated in the same manner",
+        check=is_('insulator') | is_('semiconductor') | is_('metal'))),
+    ('fermi',     quantity("Fermi energy", 'eV')),
+    ('barrier',   quantity("Barrier energy", 'eV', default=get_barrier)),
+
+    # Metals
+    ('work_func', maybe_quantity("Work function", 'eV')),
+
+    # Insulators / semiconductors
+    ('affinity',  maybe_quantity("Electron affinity", 'eV')),
+    ('band_gap',  maybe_quantity("Band gap", 'eV'))
+])
+
 
 cstool_model = Model([
     ('name',      Type("Name of material", default=None,
                        check=is_string)),
 
     ('rho_m',     quantity("Specific density", 'g/cm³')),
-    ('fermi',     quantity("Fermi energy", 'eV')),
-    ('work_func', quantity("Work function", 'eV')),
-    ('band_gap',  quantity("Band gap", 'eV')),
+
+    ('band_structure', ModelType(
+        band_structure_model, "band_structure",
+        "Band structure of the material. There are two models: metals"
+        " and insulators (or semiconductors). Metals need a Fermi energy"
+        " and work function, insulators need a Fermi energy, band gap"
+        " and affinity. The barrier energy is calculated as Fermi +"
+        " work_func in the case of metals, or as Fermi + affinity +"
+        " band_gap/2 for insulators.",
+        check=energy_check, obligatory=True)),
 
     ('phonon', ModelType(
         phonon_model, "phonon",

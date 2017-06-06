@@ -49,6 +49,7 @@ if __name__ == "__main__":
     print("Total molar weight: {:~P}".format(s.M_tot))
     print("Number density: {:~P}".format(s.rho_n))
     print("Brillouin zone energy: {:~P}".format(s.phonon.E_BZ))
+    print("Barrier energy: {:~P}".format(s.band_structure.barrier))
     print()
     print("# Computing Mott cross-sections using ELSEPA.")
 
@@ -70,15 +71,19 @@ if __name__ == "__main__":
         )(E)*units('cm^2/rad')
 
     properties = {
-        'fermi': (s.fermi, 'eV'),
-        'work_func': (s.work_func, 'eV'),
-        'band_gap': (s.band_gap, 'eV'),
+        'fermi': (s.band_structure.fermi, 'eV'),
+        'barrier': (s.band_structure.barrier, 'eV'),
         'phonon_loss': (s.phonon.energy_loss, 'eV'),
         'density': (s.rho_n, 'm^-3')
     }
+    if s.band_structure.model == 'insulator' or s.band_structure.model == 'semiconductor':
+        properties['band_gap'] = (s.band_structure.band_gap, 'eV')
 
     # write output
     outfile = h5.File("{}.mat.hdf5".format(s.name), 'w')
+
+    outfile.attrs['name'] = s.name
+    outfile.attrs['conductor_type'] = s.band_structure.model
 
     hdf_properties = outfile.create_dataset(
         "properties", (len(properties),), dtype=np.dtype([
@@ -111,7 +116,7 @@ if __name__ == "__main__":
     print()
 
     # inelastic
-    e_inel = np.logspace(np.log10(s.fermi.magnitude+0.1), 4, 129) * units.eV
+    e_inel = np.logspace(np.log10(s.band_structure.fermi.magnitude+0.1), 4, 129) * units.eV
     p_inel = np.linspace(0.0, 1.0, 1024)
 
     inelastic_grp = outfile.create_group("inelastic")
@@ -123,7 +128,7 @@ if __name__ == "__main__":
     inel_icdf.attrs['units'] = 'eV'
     print("# Computing inelastic total cross-sections and iCDFs.")
     for i, K in enumerate(e_inel):
-        w0_max = K-s.fermi # it is not possible to lose so much energy that the
+        w0_max = K-s.band_structure.fermi # it is not possible to lose so much energy that the
         # primary electron ends up below the Fermi level in an inelastic
         # scattering event
 
