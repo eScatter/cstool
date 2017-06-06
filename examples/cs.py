@@ -144,28 +144,32 @@ if __name__ == "__main__":
     shells = ionization_shells(s)
 
     tcstot_at_K = np.zeros(e_ion.shape) * units('m^2')
-    for shell in shells:
-        shell['tcs_at_K'] = np.zeros(e_ion.shape) * units('m^2')
-        i_able = (e_ion > shell['E_bind'])
-        j_able = (shell['K'] > shell['E_bind'])
-        shell['tcs_at_K'][i_able] = ion_loglog_interp(
-            shell['K'][j_able], shell['tcs'][j_able])(e_ion[i_able]).to('m^2')
-        tcstot_at_K += shell['tcs_at_K']
+    for shell in reversed(shells):
+        shell['cs_at_K'] = np.zeros(e_ion.shape) * units('m^2')
+        margin = 10*units.eV
+        i_able = ((e_ion+margin) > shell['B'])
+        j_able = (shell['K'] > shell['B']) & (shell['tcs'] > 0*units('m^2'))
+        shell['cs_at_K'][i_able] = ion_loglog_interp(
+            shell['K'][j_able], shell['tcs'][j_able])((e_ion+margin)[i_able]).to('m^2')
+        tcstot_at_K += shell['cs_at_K']
 
     Pcum_at_K = np.zeros(e_ion.shape)
-    for shell in shells:
+    for shell in reversed(shells):
         shell['P_at_K'] = np.zeros(e_ion.shape)
         i_able = (tcstot_at_K > 0*units('m^2'))
-        shell['P_at_K'][i_able] = shell['tcs_at_K'][i_able]/tcstot_at_K[i_able]
+        shell['P_at_K'][i_able] = shell['cs_at_K'][i_able]/tcstot_at_K[i_able]
         Pcum_at_K += shell['P_at_K']
         shell['Pcum_at_K'] = np.copy(Pcum_at_K)
 
     ionization_icdf = np.ndarray((e_ion.shape[0], p_ion.shape[0]))*units.eV
     for j, P in enumerate(p_ion):
         icdf_at_P = np.ndarray(e_ion.shape) * units.eV
-        icdf_at_P.fill(np.nan * units.eV)
-        for shell in reversed(shells):
-            icdf_at_P[P < shell['Pcum_at_K']] = shell['E_bind']
+        icdf_at_P[:] = np.nan
+        for shell in shells:
+            icdf_at_P[P < shell['Pcum_at_K']] = shell['B']
+        icdf_at_P[e_ion < 100*units.eV] = np.nan
+        icdf_at_P[icdf_at_P < 50*units.eV] = np.nan
+        icdf_at_P[np.isnan(icdf_at_P)] = outer_shell_energies(s)(e_ion)[np.isnan(icdf_at_P)]
         ionization_icdf[:, j] = icdf_at_P
 
     # write ionization
@@ -178,10 +182,5 @@ if __name__ == "__main__":
 
     ion_icdf = ionization_grp.create_dataset("dE_icdf", data=ionization_icdf.to('eV'))
     ion_icdf.attrs['units'] = 'eV'
-
-    # outer shell ionization
-    osi_energies = outer_shell_energies(s)
-    ionization_osi = ionization_grp.create_dataset("osi_energies", data=osi_energies.to('eV'))
-    ionization_osi.attrs['units'] = 'eV'
 
     outfile.close()

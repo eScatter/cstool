@@ -5,14 +5,12 @@ from cslib import units, Settings
 
 import numpy as np
 import os
-from warnings import warn
 
 
 def loglog_interpolate(x_i, y_i):
     """Interpolates the tabulated values. Linear interpolation
     on a log-log scale.
-    Out-of-range behaviour: extrapolation if x is too high, and
-    zero if x is too low."""
+    Out-of-range behaviour: extrapolation."""
 
     assert y_i.shape == x_i.shape, "shapes should match"
 
@@ -31,12 +29,7 @@ def loglog_interpolate(x_i, y_i):
         y = (1 - w) * np.take(log_y_i, mx_idx) \
             + w * np.take(log_y_i, mx_idx + 1)
 
-        if np.any(x_idx == x_i.size):
-            warn("Extrapolating ionization cross section above upper bound ({})."
-                 .format(x_i.flatten()[-1]))
-
-        # Below the lower bound, return 0. Above the upper bound, extrapolate.
-        return (x_idx != 0) * np.exp(y) * y_i.units
+        return np.exp(y) * y_i.units
 
     return f
 
@@ -56,10 +49,14 @@ def ionization_shells(s: Settings):
         data = _ionization_shells(element.Z)
         for n, shell in sorted(data.items()):
             K, tcs = list(map(list, zip(*shell.cs.data)))
+            B = shell.energy
             K = np.array(K)*units.eV
             tcs = np.array(tcs)*units.barn
             tcs *= element.count * shell.occupancy
-            shells.append({'E_bind': shell.energy, 'K': K, 'tcs': tcs})
+            if B < 1000*units.eV:
+                shells.append({'B': B, 'K': K, 'tcs': tcs})
+                #print(shell.energy)
+                #print(shell.cs)
     return shells
 
 
@@ -67,7 +64,16 @@ def outer_shell_energies(s: Settings):
     elf_data = read_elf_data(s.elf_file)
     osi_energies = []
     for E in elf_data.comments:
-        if E < 0 or E > 100:
+        if E < 0 or E >= 100:
             break
-        osi_energies.append(E)
-    return np.array(osi_energies, dtype='f') * units.eV
+        osi_energies.append(E * units.eV)
+
+    def osi_fun(K):
+        # pick the largest energy which is larger then K
+        E = np.ndarray(K.shape) * units.eV
+        E[:] = np.nan
+        for B in sorted(osi_energies):
+            E[K > B] = B
+        return E
+
+    return osi_fun
