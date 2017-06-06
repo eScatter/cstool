@@ -48,15 +48,12 @@ def ionization_shells(s: Settings):
     for element_name, element in s.elements.items():
         data = _ionization_shells(element.Z)
         for n, shell in sorted(data.items()):
-            K, tcs = list(map(list, zip(*shell.cs.data)))
+            K, cs = list(map(list, zip(*shell.cs.data)))
             B = shell.energy
             K = np.array(K)*units.eV
-            tcs = np.array(tcs)*units.barn
-            tcs *= element.count * shell.occupancy
-            if B < 1000*units.eV:
-                shells.append({'B': B, 'K': K, 'tcs': tcs})
-                #print(shell.energy)
-                #print(shell.cs)
+            cs = np.array(cs)*units.barn
+            cs *= element.count * shell.occupancy
+            shells.append({'B': B, 'K': K, 'cs': cs})
     return shells
 
 

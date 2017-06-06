@@ -153,9 +153,9 @@ if __name__ == "__main__":
         shell['cs_at_K'] = np.zeros(e_ion.shape) * units('m^2')
         margin = 10*units.eV
         i_able = ((e_ion+margin) > shell['B'])
-        j_able = (shell['K'] > shell['B']) & (shell['tcs'] > 0*units('m^2'))
+        j_able = (shell['K'] > shell['B']) & (shell['cs'] > 0*units('m^2'))
         shell['cs_at_K'][i_able] = ion_loglog_interp(
-            shell['K'][j_able], shell['tcs'][j_able])((e_ion+margin)[i_able]).to('m^2')
+            shell['K'][j_able], shell['cs'][j_able])((e_ion+margin)[i_able]).to('m^2')
         tcstot_at_K += shell['cs_at_K']
 
     Pcum_at_K = np.zeros(e_ion.shape)
