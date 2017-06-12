@@ -27,7 +27,7 @@ def L_Kieft(K, w0, F):
     s = sqrt((1 - 2*a).magnitude, where = (a <= .5)) * (a <= .5)
 
     L1_range = (a > 0) * (a < .5) * (K-F > w0) * (K > F)
-    L2_range = (a >= .5) * (K-F > w0) * (K > F)
+    L2_range = (K-F > w0) * (K > F)
 
     # Calculate L1
     x1 = 2/a * (1 + s) - 1
@@ -114,7 +114,7 @@ def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
     def cs(K, w):
         #err = np.geterr()
         #np.seterr(all='ignore')
-        result = elf(w) * L(K, w, s.band_structure.fermi) \
+        result = elf(w) * L(K, w, s.fermi) \
             / (pi * units.a_0 * s.rho_n) \
             / (1 - 1 / (K/mc2 + 1)**2) / mc2
         #np.seterr(**err)
@@ -132,7 +132,7 @@ def inelastic_cs(s: Settings, L_method: str='Kieft', K_bounds=None):
     print("Inelastic cross-sections")
     print("========================")
 
-    K_bounds = K_bounds or (s.band_structure.fermi + 0.1 * units.eV, 1e4 * units.eV)
+    K_bounds = K_bounds or (s.fermi + 0.1 * units.eV, 1e4 * units.eV)
     print("Bounds: {k[0].magnitude:.2e} - {k[1].magnitude:.2e}"
           " {k[0].units:~P}".format(k=K_bounds))
 
