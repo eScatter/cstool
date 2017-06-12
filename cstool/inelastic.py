@@ -27,7 +27,7 @@ def L_Kieft(K, w0, F):
     s = sqrt((1 - 2*a).magnitude, where = (a <= .5)) * (a <= .5)
 
     L1_range = (a > 0) * (a < .5) * (K-F > w0) * (K > F)
-    L2_range = (a >= .5) * (K-F > w0) * (K > F)
+    L2_range = (K-F > w0) * (K > F)
 
     # Calculate L1
     x1 = 2/a * (1 + s) - 1
