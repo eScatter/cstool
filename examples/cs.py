@@ -24,11 +24,14 @@ def compute_elastic_tcs_icdf(dcs, P):
     return compute_tcs_icdf(integrant, 0*units('rad'), np.pi*units('rad'), P)
 
 
-def compute_inelastic_tcs_icdf(dcs, P, K0, K):
+def compute_inelastic_tcs_icdf(dcs, P, K0, K, max_interval):
     def integrant(w):
         return dcs(w)
 
-    return compute_tcs_icdf(integrant, K0, K, P)
+    return compute_tcs_icdf(integrant, K0, K, P,
+        sampling = np.min([100000,
+            int(np.ceil((K - K0) / max_interval))
+            ]))
 
 
 if __name__ == "__main__":
@@ -135,7 +138,8 @@ if __name__ == "__main__":
         def dcs(w):
             return inelastic_cs_fn(s)(K, w)
         tcs, icdf = compute_inelastic_tcs_icdf(dcs, p_inel,
-                                               1e-4*units.eV, w0_max)
+            s.elf_file.get_min_energy(), w0_max,
+            s.elf_file.get_min_energy_interval())
         inel_tcs[i] = tcs.to('m^2')
         inel_icdf[i] = icdf.to('eV')
         print('.', end='', flush=True)
