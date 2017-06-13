@@ -189,4 +189,7 @@ if __name__ == "__main__":
     ion_icdf = ionization_grp.create_dataset("dE_icdf", data=ionization_icdf.to('eV'))
     ion_icdf.attrs['units'] = 'eV'
 
+    ionization_osi = ionization_grp.create_dataset("outer_shells", data=s.elf_file.get_outer_shells().to('eV'))
+    ionization_osi.attrs['units'] = 'eV'
+
     outfile.close()
