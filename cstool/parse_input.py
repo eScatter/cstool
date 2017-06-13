@@ -18,12 +18,15 @@ from cslib.predicates import (
     is_string, is_integer, file_exists, has_units, is_none, is_)
 
 from .phonon_loss import phonon_loss
+from .elf import ELF
 
 
 def pprint_settings(model, settings):
+    dumper = yaml.RoundTripDumper
+    dumper.add_representer(ELF, lambda dumper, data : dumper.represent_data(data.filename))
     return yaml.dump(
         generate_settings(settings),
-        indent=4, allow_unicode=True, Dumper=yaml.RoundTripDumper)
+        indent=4, allow_unicode=True, Dumper=dumper)
 
 
 def quantity(description, unit_str, default=None):
@@ -165,7 +168,8 @@ cstool_model = Model([
     ('elf_file',  Type(
         "Filename of ELF data (Energy Loss Function). Data can be harvested"
         " from http://henke.lbl.gov/optical_constants/getdb2.html.",
-        check=is_string & file_exists)),
+        check=lambda s : True,
+        parser=lambda fname : ELF(fname))),
 
     ('elements',  Type(
         "Dictionary of elements contained in the substance.",

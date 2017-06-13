@@ -1,5 +1,4 @@
 from .parse_endf import parse_folder
-from .elf import read_elf_data
 
 from cslib import units, Settings
 
@@ -58,12 +57,9 @@ def ionization_shells(s: Settings):
 
 
 def outer_shell_energies(s: Settings):
-    elf_data = read_elf_data(s.elf_file)
-    osi_energies = []
-    for E in elf_data.comments:
-        if E < 0 or E >= 100:
-            break
-        osi_energies.append(E * units.eV)
+    osi_energies = s.elf_file.get_outer_shells()
+    osi_energies = np.delete(osi_energies.to('eV').magnitude,
+        np.where(osi_energies >= 100*units.eV)) * units.eV
 
     def osi_fun(K):
         # pick the largest energy which is larger then K

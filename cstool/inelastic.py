@@ -1,5 +1,3 @@
-from cstool.elf import read_elf_data
-
 from cslib import (units, Settings, DCS)
 from numpy import (log, sqrt, log10, pi)
 
@@ -60,100 +58,25 @@ methods = {
 }
 
 
-def loglog_interpolate(x_i, y_i):
-    """Interpolates the tabulated values. Linear interpolation
-    on a log-log scale.
-    Out-of-range behaviour: extrapolation if x is too high, and
-    zero if x is too low."""
-
-    assert y_i.shape == x_i.shape, "shapes should match"
-
-    x_log_steps = np.log(x_i[1:]/x_i[:-1])
-    log_y_i = np.log(y_i.magnitude)
-
-    def f(x):
-        x_idx = np.searchsorted(x_i.magnitude.flat,
-                                x.to(x_i.units).magnitude.flat)
-        mx_idx = np.clip(x_idx - 1, 0, x_i.size - 2)
-
-        # compute the weight factor.
-        # Have to strip the units here, because pint does not like "where".
-        w = log((x / np.take(x_i, mx_idx)).magnitude, where=x>0*x.units) \
-            / np.take(x_log_steps, mx_idx)
-
-        y = (1 - w) * np.take(log_y_i, mx_idx) \
-            + w * np.take(log_y_i, mx_idx + 1)
-
-        if np.any(x_idx == x_i.size):
-            warn("Extrapolating ELF data above upper bound ({})."
-                 .format(x_i.flatten()[-1]))
-
-        # Below the lower bound, return 0. Above the upper bound, extrapolate.
-        # For high energy, a power law is expected, but for low
-        # energies we don't know anything, so we want no energy loss.
-        return (x_idx != 0) * np.exp(y) * y_i.units
-
-    return f
-
-
 def inelastic_cs_fn(s: Settings, L_method: str='Kieft'):
     """Returns a function giving differential cross-sections for
     inelastic scattering, based on the data in the ELF files and
     an extrapolation function `L`, for which there are three options:
-    `Kieft`, `Ashley_w_ex` and `Ashley_wo_ex`. The ELF data is
-    interpolated on a log-log scale using linear interpolation."""
+    `Kieft`, `Ashley_w_ex` and `Ashley_wo_ex`."""
     assert L_method in methods, \
         "L_method should be in {}".format(list(methods.keys()))
 
     L = methods[L_method]
 
-    elf_data = read_elf_data(s.elf_file)
-    elf = loglog_interpolate(elf_data['w0'], elf_data['elf'])
     mc2 = units.m_e * units.c**2
 
     def cs(K, w):
-        #err = np.geterr()
-        #np.seterr(all='ignore')
-        result = elf(w) * L(K, w, s.band_structure.fermi) \
+        result = s.elf_file(w) * L(K, w, s.band_structure.fermi) \
             / (pi * units.a_0 * s.rho_n) \
             / (1 - 1 / (K/mc2 + 1)**2) / mc2
-        #np.seterr(**err)
         return result
 
     return cs
-
-
-def inelastic_cs(s: Settings, L_method: str='Kieft', K_bounds=None):
-    """Returns a `DCS` frame on a 1024² grid assuming some
-    sensible bounds."""
-    assert L_method in methods, \
-        "L_method should be in {}".format(list(methods.keys()))
-
-    print("Inelastic cross-sections")
-    print("========================")
-
-    K_bounds = K_bounds or (s.band_structure.fermi + 0.1 * units.eV, 1e4 * units.eV)
-    print("Bounds: {k[0].magnitude:.2e} - {k[1].magnitude:.2e}"
-          " {k[0].units:~P}".format(k=K_bounds))
-
-    K = np.logspace(
-        log10(K_bounds[0].to('eV').magnitude),
-        log10(K_bounds[1].to('eV').magnitude), 1024) * units.eV
-
-    # if L_method == 'Kieft':
-    #    w0_max = K - s.fermi
-    # else:
-    #    w0_max = K/2
-
-    elf_data = read_elf_data(s.elf_file)
-
-    w = np.logspace(
-        log10(elf_data['w0'][0].to('eV').magnitude),
-        log10(K_bounds[1].to('eV').magnitude / 2), 1024) * units.eV
-
-    dcs = inelastic_cs_fn(s, L_method)(K[:, None], w)
-
-    return DCS(K, w, dcs)
 
 
 if __name__ == "__main__":
@@ -161,14 +84,8 @@ if __name__ == "__main__":
     from .parse_input import read_input
     s = read_input(sys.argv[1])
 
-    elf_data = read_elf_data(s.elf_file)
-    elf = loglog_interpolate(elf_data['w0'], elf_data['elf'])
-
-    print(elf_data)
-    print()
-    print()
     w = np.logspace(-1, 3, 1024) * units.eV
-    e = elf(w)
+    e = s.elf_file(w)
     for l in np.c_[w, e]:
         print(' '.join(map(str, l)))
 
