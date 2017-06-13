@@ -186,9 +186,6 @@ if __name__ == "__main__":
     ion_energies = ionization_grp.create_dataset("energy", data=e_ion.to('eV'))
     ion_energies.attrs['units'] = 'eV'
 
-    ion_tcs = ionization_grp.create_dataset("cross_section", data=tcstot_at_K.to('m^2'))
-    ion_tcs.attrs['units'] = 'm^2'
-
     ion_icdf = ionization_grp.create_dataset("dE_icdf", data=ionization_icdf.to('eV'))
     ion_icdf.attrs['units'] = 'eV'
 
