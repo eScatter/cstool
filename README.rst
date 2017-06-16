@@ -61,8 +61,17 @@ Now we need to install `cstool`::
 
     (cstool-env) ./pyelsepa> cd ../cstool
     (cstool-env) ./cstool> pip install .
+    
+Now we need to get the data files for ionisation::
 
-Now you should be ready to run the example in `examples/cs.py`.
+    (cstool-env) ./cstool> cd data/endf
+    (cstool-env) ./cstool/data/endf> . fetch_endf.sh
+    (cstool-env) ./cstool/data/endf> unzip ENDF-B-VII.1-atomic_relax.zip
+    (cstool-env) ./cstool/data/endf> unzip ENDF-B-VII.1-electrons.zip
+
+Now you should be ready to run the example in `examples/cs.py`::
+
+    (cstool-env) ./cstool> ENDF_DIR=./data/endf python examples/cs.py data/materials/silicon.yaml
 
 Data sources
 ============
