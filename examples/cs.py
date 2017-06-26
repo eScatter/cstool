@@ -77,7 +77,8 @@ if __name__ == "__main__":
         'fermi': (s.band_structure.fermi, 'eV'),
         'barrier': (s.band_structure.barrier, 'eV'),
         'phonon_loss': (s.phonon.energy_loss, 'eV'),
-        'density': (s.rho_n, 'm^-3')
+        'density': (s.rho_n, 'm^-3'),
+        'effective_A': ((sum(e.M * e.count for e in s.elements.values())/(1.*units.N_A*sum(e.count for e in s.elements.values()))).to('g'), 'g')
     }
     if s.band_structure.model == 'insulator' or s.band_structure.model == 'semiconductor':
         properties['band_gap'] = (s.band_structure.band_gap, 'eV')
