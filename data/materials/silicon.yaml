@@ -1,15 +1,29 @@
-name:      silicon
-rho_m:     2.3290 g/cm³
-fermi:     7.83 eV
-work_func: 4.79 eV
-band_gap:  1.12 eV
-phonon:
-        model:     single
-        lattice:   5.430710 Å
-        single:
-                c_s:       9.04 km/s
-                eps_ac:    9.2 eV
+name:           silicon
+rho_m:          2.3290 g/cm³
+elf_file:       data/elf/df_Si.dat
 
-elf_file:  data/elf/df_Si.dat
+band_structure:
+    model:      semiconductor
+    fermi:      7.83 eV
+    band_gap:   1.12 eV
+    affinity:   4.05 eV
+
+phonon:
+    model:      dual
+    lattice:    5.430710 Å
+    m_dos:      1.09 m_e                # Density of state mass []
+    m_eff:      0.26 m_e                # Effective mass
+    single:
+        c_s:    6490 m/s
+        eps_ac: 4.14 eV
+    longitudinal:                       # idem dito for longitudinal,
+        alpha:  2.00e-7 m²/s
+        c_s:    9010 m/s
+        eps_ac: 6.39 eV
+    transversal:                        # and transversal modes
+        alpha:  2.26e-7 m²/s
+        c_s:    5230 m/s
+        eps_ac: 3.01 eV
+
 elements:
-        Si: { count: 1, Z: 14, M: 28.085 g/mol }
+    Si: { count: 1, Z: 14, M: 28.0855 g/mol }

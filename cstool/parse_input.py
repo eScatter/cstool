@@ -18,12 +18,15 @@ from cslib.predicates import (
     is_string, is_integer, file_exists, has_units, is_none, is_)
 
 from .phonon_loss import phonon_loss
+from .elf import ELF
 
 
 def pprint_settings(model, settings):
+    dumper = yaml.RoundTripDumper
+    dumper.add_representer(ELF, lambda dumper, data : dumper.represent_data(data.filename))
     return yaml.dump(
         generate_settings(settings),
-        indent=4, allow_unicode=True, Dumper=yaml.RoundTripDumper)
+        indent=4, allow_unicode=True, Dumper=dumper)
 
 
 def quantity(description, unit_str, default=None):
@@ -96,15 +99,63 @@ def phonon_check(s: Settings):
 
     return False
 
+@predicate("Consistent energy diagram")
+def energy_check(s: Settings):
+    if s.model == 'insulator' or s.model == 'semiconductor':
+        if 'band_gap' in s and 'affinity' in s and 'work_func' not in s:
+            return True
+
+    if s.model == 'metal':
+        if 'band_gap' not in s and 'affinity' not in s and 'work_func' in s:
+            return True
+
+    return False
+
+def get_barrier(s: Settings):
+    if s.model == 'insulator' or s.model == 'semiconductor':
+        if s.fermi > 0*units.eV:
+            return s.fermi + s.band_gap/2 + s.affinity
+        else:
+            return s.band_gap + s.affinity
+
+    if s.model == 'metal':
+        return s.fermi + s.work_func
+
+    # It should be impossible to get here, s.model is checked to be insul/semic/metal
+    return 0*units.eV
+
+band_structure_model = Model([
+    ('model',     Type(
+        "Whether the material is of `insulator`, `semiconductor` or `metal` type."
+        " Insulators and semiconductors are treated in the same manner",
+        check=is_('insulator') | is_('semiconductor') | is_('metal'))),
+    ('fermi',     quantity("Fermi energy", 'eV')),
+    ('barrier',   quantity("Barrier energy", 'eV', default=get_barrier)),
+
+    # Metals
+    ('work_func', maybe_quantity("Work function", 'eV')),
+
+    # Insulators / semiconductors
+    ('affinity',  maybe_quantity("Electron affinity", 'eV')),
+    ('band_gap',  maybe_quantity("Band gap", 'eV'))
+])
+
 
 cstool_model = Model([
     ('name',      Type("Name of material", default=None,
                        check=is_string)),
 
     ('rho_m',     quantity("Specific density", 'g/cm³')),
-    ('fermi',     quantity("Fermi energy", 'eV')),
-    ('work_func', quantity("Work function", 'eV')),
-    ('band_gap',  quantity("Band gap", 'eV')),
+
+    ('band_structure', ModelType(
+        band_structure_model, "band_structure",
+        "Band structure of the material. There are two models: metals"
+        " and insulators (or semiconductors). Metals need a Fermi energy"
+        " and work function, insulators need a Fermi energy, band gap"
+        " and affinity. The barrier energy is calculated as Fermi +"
+        " work_func in the case of metals, or as Fermi + affinity +"
+        " band_gap/2 for insulators.",
+        check=energy_check, obligatory=True)),
 
     ('phonon', ModelType(
         phonon_model, "phonon",
@@ -117,7 +168,8 @@ cstool_model = Model([
     ('elf_file',  Type(
         "Filename of ELF data (Energy Loss Function). Data can be harvested"
         " from http://henke.lbl.gov/optical_constants/getdb2.html.",
-        check=is_string & file_exists)),
+        check=lambda s : True,
+        parser=lambda fname : ELF(fname))),
 
     ('elements',  Type(
         "Dictionary of elements contained in the substance.",
@@ -134,7 +186,10 @@ cstool_model = Model([
         default=lambda s: sum(e.M * e.count for e in s.elements.values()))),
 
     ('rho_n',       maybe_quantity(
-        "Number density of atoms.", 'cm⁻³',
+        "Number density of atoms or molecules in compound. For instance "
+        "in the case of silicon dioxide this is the number density of "
+        "groups of two oxygen and one silicon atom, even if SiO2 is not "
+        "a molecule per se.", 'cm⁻³',
         default=lambda s: (units.N_A / s.M_tot * s.rho_m).to('cm⁻³')))
 ])
 

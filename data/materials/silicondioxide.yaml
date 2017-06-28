@@ -1,17 +1,20 @@
-name:      silicondioxide
-rho_m:     2.648 g/cm³
-fermi:     0 eV
-work_func: 0.9 eV
-band_gap:  9 eV
+name:           silicondioxide
+rho_m:          2.648 g/cm³
+elf_file:       data/elf/df_SiO2.dat
+
+band_structure:
+    model:      insulator
+    fermi:      0 eV
+    band_gap:   9 eV
+    affinity:   0.9 eV
 
 phonon:
-    model:   single
-    lattice: 5.45 Å
+    model:      single
+    lattice:    5.45 Å
     single:
-        c_s:       3.560 km/s
-        eps_ac:    2.6 eV
+        c_s:    3.560 km/s
+        eps_ac: 2.6 eV
 
-elf_file:  data/elf/df_SiO2.dat
 elements:
-        Si: { count: 1, Z: 14, M: 28.085 g/mol }
-        O:  { count: 2, Z:  8, M: 15.999 g/mol }
+    Si: { count: 1, Z: 14, M: 28.085 g/mol }
+    O:  { count: 2, Z:  8, M: 15.999 g/mol }

@@ -37,6 +37,10 @@ create a virtual environment::
     > source ./cstool-env/bin/activate
     (cstool-env) >
 
+You may need to update `pip` at this point::
+
+    > pip install --upgrade pip
+
 Now we need to install `cslib` and `pyelsepa`::
 
     (cstool-env) > cd cslib
@@ -65,7 +69,7 @@ Now we need to install `cstool`::
 Now we need to get the data files for ionisation::
 
     (cstool-env) ./cstool> cd data/endf
-    (cstool-env) ./cstool/data/endf> . fetch_endf.sh
+    (cstool-env) ./cstool/data/endf> . fetch-endf.sh
     (cstool-env) ./cstool/data/endf> unzip ENDF-B-VII.1-atomic_relax.zip
     (cstool-env) ./cstool/data/endf> unzip ENDF-B-VII.1-electrons.zip
 
