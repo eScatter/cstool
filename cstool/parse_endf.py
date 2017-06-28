@@ -9,10 +9,12 @@
 import os
 import glob
 import numpy as np
+import re
 
 from cslib import units
 from cslib.dataframe import DataFrame
 from collections import namedtuple
+from zipfile import ZipFile
 
 
 Shell = namedtuple('Shell', ['energy', 'occupancy', 'cs'])
@@ -23,6 +25,7 @@ def parse_endf_line(line):
     badly represented numbers are reformatted to comply with standards.
     In this process it is assumed that there are no negative numbers
     in the ENDF file."""
+    line = line.decode('ascii')
     return {
         0: line[0:11].replace('+', 'E+').replace('-', 'E-'),
         1: line[11:22].replace('+', 'E+').replace('-', 'E-'),
@@ -37,71 +40,69 @@ def parse_endf_line(line):
     }
 
 
-def parse_eadl_file(filename):
+def parse_eadl_file(file):
     """Parse a single EADL file, extracts only the binding energy
     and occupancy of each shell."""
     shells = {}
 
-    with open(filename) as f:
-        lines = f.readlines()
-        ln = 0
-        while ln < len(lines):
-            row = parse_endf_line(lines[ln])
-            # 28/533: Atomic Relaxation Data for Electrons and Photons
-            if row["mf"] == 28 and row["mt"] == 533:
-                nss = int(row[4])   # number of subshells
-                ln += 1
-
-                for i_s in range(nss):
-                    row1 = parse_endf_line(lines[ln+0])
-                    row2 = parse_endf_line(lines[ln+1])
-
-                    subi = int(float(row1[0]))       # subshell designator
-                    ebi = float(row2[0]) * units.eV  # binding energy (eV)
-                    eln = float(row2[1])             # occupancy
-                    shells[subi] = (ebi, eln)
-
-                    ln += int(float(row1[5]))+2
+    lines = file.readlines()
+    ln = 0
+    while ln < len(lines):
+        row = parse_endf_line(lines[ln])
+        # 28/533: Atomic Relaxation Data for Electrons and Photons
+        if row["mf"] == 28 and row["mt"] == 533:
+            nss = int(row[4])   # number of subshells
             ln += 1
+
+            for i_s in range(nss):
+                row1 = parse_endf_line(lines[ln+0])
+                row2 = parse_endf_line(lines[ln+1])
+
+                subi = int(float(row1[0]))       # subshell designator
+                ebi = float(row2[0]) * units.eV  # binding energy (eV)
+                eln = float(row2[1])             # occupancy
+                shells[subi] = (ebi, eln)
+
+                ln += int(float(row1[5]))+2
+        ln += 1
 
     return shells
 
 
-def parse_eedl_file(filename):
+def parse_eedl_file(file):
     """Parse EEDL file, extracts the ionization cross-sections."""
     shell_cross_sections = {}
 
-    with open(filename) as f:
-        lines = f.readlines()
-        ln = 0
-        while ln < len(lines):
-            row = parse_endf_line(lines[ln])
-            # 23/534--23/599: Electroionization Subshell Cross
-            # Sections shell 1--66
-            if row["mf"] == 23 and (row["mt"] >= 534 and row["mt"] <= 599):
-                row2 = parse_endf_line(lines[ln+1])
-                # row3 = parse_endf_line(lines[ln+2])
-                subi = row["mt"]-533
-                # ebi = float(row2[0])    # binding energy (eV)
-                n = int(row2[5])
-                ln += 2
+    lines = file.readlines()
+    ln = 0
+    while ln < len(lines):
+        row = parse_endf_line(lines[ln])
+        # 23/534--23/599: Electroionization Subshell Cross
+        # Sections shell 1--66
+        if row["mf"] == 23 and (row["mt"] >= 534 and row["mt"] <= 599):
+            row2 = parse_endf_line(lines[ln+1])
+            # row3 = parse_endf_line(lines[ln+2])
+            subi = row["mt"]-533
+            # ebi = float(row2[0])    # binding energy (eV)
+            n = int(row2[5])
+            ln += 2
 
-                col = 3
-                for _ in range(n):
-                    if col > 2:
-                        ln += 1
-                        rowd = parse_endf_line(lines[ln])
-                        col = 0
+            col = 3
+            for _ in range(n):
+                if col > 2:
+                    ln += 1
+                    rowd = parse_endf_line(lines[ln])
+                    col = 0
 
-                    energy = float(rowd[2*col+0])  # energy
-                    cs = float(rowd[2*col+1])      # crosssection
+                energy = float(rowd[2*col+0])  # energy
+                cs = float(rowd[2*col+1])      # crosssection
 
-                    if subi not in shell_cross_sections:
-                        shell_cross_sections[subi] = []
-                    shell_cross_sections[subi].append((energy, cs))
+                if subi not in shell_cross_sections:
+                    shell_cross_sections[subi] = []
+                shell_cross_sections[subi].append((energy, cs))
 
-                    col += 1
-            ln += 1
+                col += 1
+        ln += 1
 
     dtype = [('energy', float), ('cs', float)]
     for k, v in shell_cross_sections.items():
@@ -124,11 +125,35 @@ def parse_folder(dirname, z):
     if len(eedl_files) != 1:
         raise FileNotFoundError(eedl_filenames)
 
-    eadl_fpath = eadl_files[0]
-    eedl_fpath = eedl_files[0]
+    with open(eadl_files[0], 'rb') as eadl_f:
+        shells = parse_eadl_file(eadl_f)
+    with open(eedl_files[0], 'rb') as eedl_f:
+        shell_cross_sections = parse_eedl_file(eedl_f)
 
-    shells = parse_eadl_file(eadl_fpath)
-    shell_cross_sections = parse_eedl_file(eedl_fpath)
+    for subi, (energy, occupancy) in shells.items():
+        shells[subi] = Shell(energy, occupancy, shell_cross_sections[subi])
+
+    return shells
+
+
+def parse_zipfiles(eadl_fn, eedl_fn, Z):
+    with ZipFile(eadl_fn) as zf:
+        eadl_pattern = re.compile(
+            '^atomic_relax/atom-{0:03d}_[A-Za-z]+_000.endf$'.format(Z))
+        for fn in zf.namelist():
+            if eadl_pattern.match(fn):
+                with zf.open(fn, 'r') as eadl_f:
+                    shells = parse_eadl_file(eadl_f)
+                break
+
+    with ZipFile(eedl_fn) as zf:
+        eadl_pattern = re.compile(
+            '^electrons/e-{0:03d}_[A-Za-z]+_000.endf$'.format(Z))
+        for fn in zf.namelist():
+            if eadl_pattern.match(fn):
+                with zf.open(fn, 'r') as eadl_f:
+                    shell_cross_sections = parse_eedl_file(eadl_f)
+                break
 
     for subi, (energy, occupancy) in shells.items():
         shells[subi] = Shell(energy, occupancy, shell_cross_sections[subi])

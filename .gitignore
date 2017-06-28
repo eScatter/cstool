@@ -97,3 +97,4 @@ ENV/
 examples
 !examples/*.py
 
+endf.cache
