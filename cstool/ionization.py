@@ -39,7 +39,7 @@ def loglog_interpolate(x_i, y_i):
 
 
 def obtain_endf_files():
-    sources = json.loads(resource_string(__name__, 'data/endf_sources.json'))
+    sources = json.loads(resource_string(__name__, 'data/endf_sources.json').decode("utf-8"))
     os.makedirs('endf.cache', exist_ok=True)
     for name, source in sources.items():
         source['filename'] = 'endf.cache/{}.zip'.format(name)
