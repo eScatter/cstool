@@ -109,6 +109,8 @@ if __name__ == "__main__":
     el_tcs.attrs['units'] = 'm^2'
     el_icdf = elastic_grp.create_dataset("angle_icdf", (e_el.shape[0], p_el.shape[0]))
     el_icdf.attrs['units'] = 'radian'
+    el_tmfp = elastic_grp.create_dataset("transport_mfp", e_el.shape)
+    el_tmfp.attrs['units'] = 'm'
     print("# Computing elastic total cross-sections and iCDFs.")
     for i, K in enumerate(e_el):
         def dcs(theta):
@@ -116,6 +118,28 @@ if __name__ == "__main__":
         tcs, icdf = compute_elastic_tcs_icdf(dcs, p_el)
         el_tcs[i] = tcs.to('m^2')
         el_icdf[i] = icdf.to('rad')
+        print('.', end='', flush=True)
+    print()
+
+    tmfpmax = 0. * units.m
+    print("# Computing transport mean free path.")
+    print("K \t tmfp \n")
+    for i, K in enumerate(e_el):
+        def dcs(theta):
+            return elastic_cs_fn(theta, K) * (1 - np.cos(theta)) * s.rho_n
+        inv_tmfp, icdf_dummy = compute_elastic_tcs_icdf(dcs, p_el)
+        tmfp = 1./inv_tmfp
+        if ( K >= s.band_structure.barrier):
+            # make sure the tmfp is monotonously increasing for energies above
+            # the vacuum potential barrier
+            if (tmfp < tmfpmax):
+                tmfp = tmfpmax
+            else:
+                tmfpmax = tmfp
+        else:
+            tmfpmax = tmfp
+        el_tmfp[i] = tmfp.to('m')
+        print(str(K) + "\t" + str(tmfp.to('nm')) + "\n")
         print('.', end='', flush=True)
     print()
 
