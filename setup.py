@@ -23,6 +23,7 @@ setup(
     author_email='j.hidding@esciencecenter.nl',
     url='https://github.com/eScatter/pyelsepa.git',
     packages=['cstool'],
+    package_data={'cstool': ['data/endf_sources.json']},
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',

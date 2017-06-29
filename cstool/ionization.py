@@ -1,9 +1,14 @@
-from .parse_endf import parse_folder
+from .parse_endf import parse_zipfiles
 
 from cslib import units, Settings
 
 import numpy as np
 import os
+import json
+
+from urllib.request import urlopen
+from hashlib import sha1
+from pkg_resources import resource_string
 
 
 def loglog_interpolate(x_i, y_i):
@@ -33,13 +38,40 @@ def loglog_interpolate(x_i, y_i):
     return f
 
 
+def obtain_endf_files():
+    sources = json.loads(resource_string(__name__, 'data/endf_sources.json').decode("utf-8"))
+    os.makedirs('endf.cache', exist_ok=True)
+    for name, source in sources.items():
+        source['filename'] = 'endf.cache/{}.zip'.format(name)
+
+        if os.path.isfile(source['filename']):
+            with open(source['filename'], 'rb') as f:
+                if sha1(f.read()).hexdigest() == source['sha1']:
+                    print("using cached file {}".format(source['filename']))
+                    continue
+                else:
+                    print("cached file {} has incorrect checksum".format(source['filename']))
+
+        print("downloading {} file".format(name))
+        try:
+            with urlopen(source['url']) as response:
+                data = response.read()
+                if sha1(data).hexdigest() != source['sha1']:
+                    raise Exception("downloaded file has incorrect checksum")
+                with open(source['filename'], 'wb') as f:
+                    f.write(data)
+        except Exception as e:
+            print("failed to download {} file ({})".format(name, e))
+            exit()
+
+    return sources
+
+
 def _ionization_shells(Z):
-    if 'ENDF_DIR' not in os.environ:
-        raise EnvironmentError('ENDF_DIR environment variable must be set')
-    endf_dir = os.environ['ENDF_DIR']
-    if not os.path.isdir(endf_dir):
-        raise NotADirectoryError('ENDF_DIR "{}" is not a directory'.format(endf_dir))
-    return parse_folder(endf_dir, int(Z))
+    sources = obtain_endf_files()
+    return parse_zipfiles(sources['atomic_relax']['filename'],
+                          sources['electrons']['filename'],
+                          int(Z))
 
 
 def ionization_shells(s: Settings):
