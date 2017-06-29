@@ -53,12 +53,16 @@ def obtain_endf_files():
                     print("cached file {} has incorrect checksum".format(source['filename']))
 
         print("downloading {} file".format(name))
-        with urlopen(source['url']) as response:
-            data = response.read()
-            if sha1(data).hexdigest() != source['sha1']:
-                raise "downloaded file has incorrect checksum"
-            with open(source['filename'], 'wb') as f:
-                f.write(data)
+        try:
+            with urlopen(source['url']) as response:
+                data = response.read()
+                if sha1(data).hexdigest() != source['sha1']:
+                    raise Exception("downloaded file has incorrect checksum")
+                with open(source['filename'], 'wb') as f:
+                    f.write(data)
+        except Exception as e:
+            print("failed to download {} file ({})".format(name, e))
+            exit()
 
     return sources
 
