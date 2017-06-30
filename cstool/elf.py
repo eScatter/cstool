@@ -77,7 +77,7 @@ class ELF:
 
             # compute the weight factor.
             # Have to strip the units here, because pint does not like "where".
-            w = np.log((x / np.take(x_i, mx_idx)).magnitude, where=x>0*x.units) \
+            w = np.log((x / np.take(x_i, mx_idx)).magnitude, where=x>0*x.units, out=np.zeros(x.shape)) \
                 / np.take(x_log_steps, mx_idx)
 
             y = (1 - w) * np.take(log_y_i, mx_idx) \

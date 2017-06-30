@@ -22,7 +22,7 @@ def L_Kieft(K, w0, F):
     # For sqrt & log calls, we have to strip the units. pint does not like "where".
 
     a = w0 / K
-    s = sqrt((1 - 2*a).magnitude, where = (a <= .5)) * (a <= .5)
+    s = sqrt((1 - 2*a).magnitude, where = (a <= .5), out = np.zeros(a.shape))
 
     L1_range = (a > 0) * (a < .5) * (K-F > w0) * (K > F)
     L2_range = (a > 0) * (K-F > w0) * (K > F)
@@ -31,14 +31,13 @@ def L_Kieft(K, w0, F):
     x1 = 2/a * (1 + s) - 1
     x2 = K - F - w0
     x3 = K - F + w0
-    L1 = 1.5 * log((x1 * x2 / x3).magnitude, where = L1_range) * L1_range
+    L1 = 1.5 * log((x1 * x2 / x3).magnitude, where = L1_range, out = np.zeros(a.shape))
 
     # Calculate L2
-    L2 = -log(a.magnitude, where = L2_range) * L2_range
+    L2 = -log(a.magnitude, where = L2_range, out = np.zeros(a.shape))
 
     return np.maximum(0, (w0 < 50 * units.eV) * L1
                       + (w0 > 50 * units.eV) * L2)
-
 
 def L_Ashley_w_ex(K, w0, _):
     a = w0 / K
