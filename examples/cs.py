@@ -203,7 +203,7 @@ if __name__ == "__main__":
     ran_range = electron_range_grp.create_dataset("range", e_ran.shape)
     ran_range.attrs['units'] = 'm'
 
-    ran_tmfp = np.zeros(e_ran.shape)
+    ran_tmfp = np.zeros(e_ran.shape) * units.m;
     tmfpmax = 0. * units.m
     print("# Computing transport mean free path.")
     for i, K in enumerate(e_ran):
@@ -220,12 +220,12 @@ if __name__ == "__main__":
                 tmfpmax = tmfp
         else:
             tmfpmax = tmfp
-        ran_tmfp[i] = tmfp.to('m').magnitude
+        ran_tmfp[i] = tmfp
         print('.', end='', flush=True)
     print()
 
-    rangemax = 0.
-    tmprange = np.zeros(e_ran.shape)
+    rangemax = 0. * units.m
+    tmprange = np.zeros(e_ran.shape) * units.m
     print("# Computing inelastic electron range.")
     for i, K in enumerate(e_ran):
         ran_energies[i] = K.to('eV')
@@ -243,7 +243,7 @@ if __name__ == "__main__":
                 s.elf_file.get_min_energy_interval())
             #inel_tcs[i] = tcs.to('m^2')
             #inel_icdf[i] = icdf.to('eV')
-            tmprange[i] = (1./tcs).to('m').magnitude
+            tmprange[i] = 1/tcs
             j = 0
             omega = e_ran[0]
             omega_old = 0. * units.eV
@@ -260,7 +260,7 @@ if __name__ == "__main__":
                 rangevalue = np.sqrt(2 * ran_tmfp[i] * tmprange[i])
             if (rangevalue > rangemax):
                 rangemax = rangevalue
-            ran_range[i] = rangemax * units.m
+            ran_range[i] = rangemax.to('m')
         print('.', end='', flush=True)
     print()
 
