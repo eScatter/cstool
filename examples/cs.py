@@ -109,8 +109,6 @@ if __name__ == "__main__":
     el_tcs.attrs['units'] = 'm^2'
     el_icdf = elastic_grp.create_dataset("angle_icdf", (e_el.shape[0], p_el.shape[0]))
     el_icdf.attrs['units'] = 'radian'
-    el_tmfp = elastic_grp.create_dataset("transport_mfp", e_el.shape)
-    el_tmfp.attrs['units'] = 'm'
     print("# Computing elastic total cross-sections and iCDFs.")
     for i, K in enumerate(e_el):
         def dcs(theta):
@@ -118,28 +116,6 @@ if __name__ == "__main__":
         tcs, icdf = compute_elastic_tcs_icdf(dcs, p_el)
         el_tcs[i] = tcs.to('m^2')
         el_icdf[i] = icdf.to('rad')
-        print('.', end='', flush=True)
-    print()
-
-    tmfpmax = 0. * units.m
-    print("# Computing transport mean free path.")
-    print("K \t tmfp \n")
-    for i, K in enumerate(e_el):
-        def dcs(theta):
-            return elastic_cs_fn(theta, K) * (1 - np.cos(theta)) * s.rho_n
-        inv_tmfp, icdf_dummy = compute_elastic_tcs_icdf(dcs, p_el)
-        tmfp = 1./inv_tmfp
-        if ( K >= s.band_structure.barrier):
-            # make sure the tmfp is monotonously increasing for energies above
-            # the vacuum potential barrier
-            if (tmfp < tmfpmax):
-                tmfp = tmfpmax
-            else:
-                tmfpmax = tmfp
-        else:
-            tmfpmax = tmfp
-        el_tmfp[i] = tmfp.to('m')
-        print(str(K) + "\t" + str(tmfp.to('nm')) + "\n")
         print('.', end='', flush=True)
     print()
 
@@ -216,5 +192,76 @@ if __name__ == "__main__":
 
     ionization_osi = ionization_grp.create_dataset("outer_shells", data=s.elf_file.get_outer_shells().to('eV'))
     ionization_osi.attrs['units'] = 'eV'
+
+    # electron range
+    e_ran = np.logspace(-2, 3, 129) * units.eV
+    p_ran = np.linspace(0.0, 1.0, 1024)
+
+    electron_range_grp = outfile.create_group("electron_range")
+    ran_energies = electron_range_grp.create_dataset("energy", data=e_ran.to('eV'))
+    ran_energies.attrs['units'] = 'eV'
+    ran_range = electron_range_grp.create_dataset("range", e_ran.shape)
+    ran_range.attrs['units'] = 'm'
+
+    ran_tmfp = np.zeros(e_ran.shape)
+    tmfpmax = 0. * units.m
+    print("# Computing transport mean free path.")
+    for i, K in enumerate(e_ran):
+        def dcs(theta):
+            return elastic_cs_fn(theta, K) * (1 - np.cos(theta)) * s.rho_n
+        inv_tmfp, icdf_dummy = compute_elastic_tcs_icdf(dcs, p_ran)
+        tmfp = 1./inv_tmfp
+        if ( K >= s.band_structure.barrier):
+            # make sure the tmfp is monotonously increasing for energies above
+            # the vacuum potential barrier
+            if (tmfp < tmfpmax):
+                tmfp = tmfpmax
+            else:
+                tmfpmax = tmfp
+        else:
+            tmfpmax = tmfp
+        ran_tmfp[i] = tmfp.to('m').magnitude
+        print('.', end='', flush=True)
+    print()
+
+    rangemax = 0.
+    tmprange = np.zeros(e_ran.shape)
+    print("# Computing inelastic electron range.")
+    for i, K in enumerate(e_ran):
+        ran_energies[i] = K.to('eV')
+        if (K < s.band_structure.barrier):
+            ran_range[i] = 0. * units.m
+        else:
+            w0_max = K-s.band_structure.fermi # it is not possible to lose so
+            # much energy that the primary electron ends up below the Fermi
+            # level in an inelastic scattering event
+
+            def dcs(w):
+                return inelastic_cs_fn(s)(K, w) * s.rho_n
+            tcs, icdf_dummy = compute_inelastic_tcs_icdf(dcs, p_inel,
+                s.elf_file.get_min_energy(), w0_max,
+                s.elf_file.get_min_energy_interval())
+            #inel_tcs[i] = tcs.to('m^2')
+            #inel_icdf[i] = icdf.to('eV')
+            tmprange[i] = (1./tcs).to('m').magnitude
+            j = 0
+            omega = e_ran[0]
+            omega_old = 0. * units.eV
+            while (omega < K/2 and omega < K-s.band_structure.fermi):
+                cdcsvalue = inelastic_cs_fn(s)(K,omega) * s.rho_n * (omega - omega_old)
+                index = sum(e_ran <= (K - omega)) - 1 # get last energy index smaller
+                # than the energy remaining after one energy loss event
+                tmprange[i] = tmprange[i] + tmprange[index] * cdcsvalue / tcs
+                j = j + 1
+                omega_old = omega
+                omega = e_ran[j]
+            rangevalue = tmprange[i]
+            if (2 * ran_tmfp[i] < tmprange[i]):
+                rangevalue = np.sqrt(2 * ran_tmfp[i] * tmprange[i])
+            if (rangevalue > rangemax):
+                rangemax = rangevalue
+            ran_range[i] = rangemax * units.m
+        print('.', end='', flush=True)
+    print()
 
     outfile.close()
