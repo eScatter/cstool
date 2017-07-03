@@ -71,8 +71,8 @@ class ELF:
         log_y_i = np.log(y_i.magnitude)
 
         def f(x):
-            x_idx = np.searchsorted(x_i.magnitude.flat,
-                                    x.to(x_i.units).magnitude.flat)
+            x_idx = np.searchsorted(x_i.magnitude,
+                                    x.to(x_i.units).magnitude)
             mx_idx = np.clip(x_idx - 1, 0, x_i.size - 2)
 
             # compute the weight factor.
