@@ -39,6 +39,38 @@ def L_Kieft(K, w0, F):
     return np.maximum(0, (w0 < 50 * units.eV) * L1
                       + (w0 > 50 * units.eV) * L2)
 
+def L_dv1(K, w0, F):
+    """Computes electron cross-sections for inelastic scattering from
+    optical data. Model is conceptually somewhere between L_Kieft and L_Ashley:
+    L1 is a Fermi-corrected version of Ashley without the factor 3/2
+    rescale by Kieft; L2 is the same as in Kieft.
+
+    :param K:
+        Kinetic energy of electron.
+    :param w0:
+        ω₀ - transition energy
+    :param F:
+        Fermi energy
+    """
+
+    a = (w0 / K).magnitude
+    b = (F / K).magnitude
+    s = sqrt(1 - 2*a, where = (a <= .5), out = np.zeros(a.shape))
+
+    L1_range = (a > 0) * (a < .5) * (a - s < 1 - 2*b)
+    L2_range = (a > 0) * (a < 1 - b)
+
+    # Calculate L1
+    wm = (1 + a - s)/2
+    wp = np.minimum((1 + a + s)/2, 1 - b)
+    L1 = log((wp - a) * wm / (wp * (wm - a)), where = L1_range, out = np.zeros(a.shape))
+
+    # Calculate L2
+    L2 = -log(a, where = L2_range, out = np.zeros(a.shape))
+
+    return np.maximum(0, (w0 < 50 * units.eV) * L1
+                      + (w0 > 50 * units.eV) * L2)
+
 def L_Ashley_w_ex(K, w0, _):
     a = w0 / K
     return (1 - a) * log(4/a) - 7/4*a + a**(3/2) - 33/32*a**2
@@ -53,7 +85,8 @@ def L_Ashley_wo_ex(K, w0, _):
 methods = {
     'Kieft': L_Kieft,
     'Ashley_w_ex': L_Ashley_w_ex,
-    'Ashley_wo_ex': L_Ashley_wo_ex
+    'Ashley_wo_ex': L_Ashley_wo_ex,
+    'dv1': L_dv1
 }
 
 
