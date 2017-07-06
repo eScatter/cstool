@@ -6,6 +6,7 @@ from cstool.mott import s_mott_cs
 from cstool.phonon import phonon_cs_fn
 from cstool.inelastic import inelastic_cs_fn
 from cstool.compile import compute_tcs_icdf
+from cstool.compile import compute_tcs
 from cstool.ionization import ionization_shells, outer_shell_energies, \
                               loglog_interpolate as ion_loglog_interp
 from cslib.noodles import registry
@@ -23,12 +24,27 @@ def compute_elastic_tcs_icdf(dcs, P):
 
     return compute_tcs_icdf(integrant, 0*units('rad'), np.pi*units('rad'), P)
 
+def compute_elastic_tcs(dcs, P):
+    def integrant(theta):
+        return dcs(theta) * 2 * np.pi * np.sin(theta)
+
+    return compute_tcs(integrant, 0*units('rad'), np.pi*units('rad'), P)
+
 
 def compute_inelastic_tcs_icdf(dcs, P, K0, K, max_interval):
     def integrant(w):
         return dcs(w)
 
     return compute_tcs_icdf(integrant, K0, K, P,
+        sampling = np.min([100000,
+            int(np.ceil((K - K0) / max_interval))
+            ]))
+
+def compute_inelastic_tcs(dcs, P, K0, K, max_interval):
+    def integrant(w):
+        return dcs(w)
+
+    return compute_tcs(integrant, K0, K, P,
         sampling = np.min([100000,
             int(np.ceil((K - K0) / max_interval))
             ]))
@@ -209,7 +225,7 @@ if __name__ == "__main__":
     for i, K in enumerate(e_ran):
         def dcs(theta):
             return elastic_cs_fn(theta, K) * (1 - np.cos(theta)) * s.rho_n
-        inv_tmfp, icdf_dummy = compute_elastic_tcs_icdf(dcs, p_ran)
+        inv_tmfp = compute_elastic_tcs(dcs, p_ran)
         tmfp = 1./inv_tmfp
         if ( K >= s.band_structure.barrier):
             # make sure the tmfp is monotonously increasing for energies above
@@ -238,23 +254,22 @@ if __name__ == "__main__":
 
             def dcs(w):
                 return inelastic_cs_fn(s)(K, w) * s.rho_n
-            tcs, icdf_dummy = compute_inelastic_tcs_icdf(dcs, p_inel,
+            tcs = compute_inelastic_tcs(dcs, p_inel,
                 s.elf_file.get_min_energy(), w0_max,
                 s.elf_file.get_min_energy_interval())
-            #inel_tcs[i] = tcs.to('m^2')
-            #inel_icdf[i] = icdf.to('eV')
             tmprange[i] = 1/tcs
-            j = 0
-            omega = e_ran[0]
-            omega_old = 0. * units.eV
-            while (omega < K/2 and omega < K-s.band_structure.fermi):
-                cdcsvalue = inelastic_cs_fn(s)(K,omega) * s.rho_n * (omega - omega_old)
-                index = sum(e_ran <= (K - omega)) - 1 # get last energy index smaller
-                # than the energy remaining after one energy loss event
-                tmprange[i] = tmprange[i] + tmprange[index] * cdcsvalue / tcs
-                j = j + 1
-                omega_old = omega
-                omega = e_ran[j]
+            for j, omega in enumerate(e_ran):
+                if (omega < K/2 and omega < K-s.band_structure.fermi):
+                    if j==0:
+                        omega_old = 0. * units.eV
+                    else:
+                        omega_old = e_ran[j-1]
+                    cdcsvalue = inelastic_cs_fn(s)(K,omega) * s.rho_n * (omega - omega_old)
+                    index = sum(e_ran <= (K - omega)) - 1 # get last energy index smaller
+                    # than the energy remaining after one energy loss event
+                    tmprange[i] += tmprange[index] * cdcsvalue / tcs
+                else:
+                    break
             rangevalue = tmprange[i]
             if (2 * ran_tmfp[i] < tmprange[i]):
                 rangevalue = np.sqrt(2 * ran_tmfp[i] * tmprange[i])
