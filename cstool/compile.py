@@ -147,3 +147,11 @@ def compute_tcs_icdf(f, a, b, P, sampling=100000):
     if cf[-1]==0:
         return 0 * x.units*y.units, np.zeros_like(P) * x.units
     return cf[-1] * x.units*y.units, np.interp(P, cf/cf[-1], x) * x.units
+
+def compute_tcs(f, a, b, P, sampling=100000):
+    x = np.linspace(a, b.to(a.units), sampling) * a.units
+    y = f(x)
+    cf = np.r_[0, np.cumsum((x[1:] - x[:-1]) * (y[:-1] + y[1:]) / 2.0)]
+    if cf[-1]==0:
+        return 0 * x.units*y.units
+    return cf[-1] * x.units*y.units
