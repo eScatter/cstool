@@ -23,11 +23,11 @@ To setup an environment for CSTool, first make sure you have the correct version
 
 clone the needed repositories::
 
-    > git clone http://github.com/eScatter/cslib.git
+    > git clone https://github.com/eScatter/cslib.git
     ...
-    > git clone http://github.com/eScatter/pyelsepa.git
+    > git clone https://github.com/eScatter/pyelsepa.git
     ...
-    > git clone http://github.com/eScatter/cstool.git
+    > git clone https://github.com/eScatter/cstool.git
     ...
 
 create a virtual environment::
