@@ -176,7 +176,7 @@ if __name__ == "__main__":
         icdf_at_P = np.ndarray(e_ion.shape) * units.eV
         icdf_at_P[:] = np.nan
         for shell in shells:
-            icdf_at_P[P < shell['Pcum_at_K']] = shell['B']
+            icdf_at_P[P <= shell['Pcum_at_K']] = shell['B']
         icdf_at_P[e_ion < 100*units.eV] = np.nan
         icdf_at_P[icdf_at_P < 50*units.eV] = np.nan
         icdf_at_P[np.isnan(icdf_at_P)] = outer_shell_energies(s)(e_ion)[np.isnan(icdf_at_P)]
