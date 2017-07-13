@@ -83,7 +83,7 @@ def ionization_shells(s: Settings):
             B = shell.energy
             K = np.array(K)*units.eV
             cs = np.array(cs)*units.barn
-            cs *= element.count * shell.occupancy
+            cs *= element.count
             shells.append({'B': B, 'K': K, 'cs': cs})
     return shells
 
