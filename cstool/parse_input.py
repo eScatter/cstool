@@ -201,7 +201,7 @@ cstool_model_type = ModelType(
 
 
 def read_input(filename):
-    raw_data = yaml.load(open(filename, 'r'), Loader=yaml.RoundTripLoader)
+    raw_data = yaml.load(open(filename, 'r', encoding='utf-8'), Loader=yaml.RoundTripLoader)
     settings = parse_to_model(cstool_model, raw_data)
     if not check_settings(settings, cstool_model):
         raise ValueError("Parsed settings do not conform the model.")
