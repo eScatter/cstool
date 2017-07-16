@@ -12,6 +12,8 @@ preferably in a VirtualEnv (so that you don't muck-up your Python installation).
 
 .. image:: https://travis-ci.org/eScatter/cstool.svg?branch=master
     :target: https://travis-ci.org/eScatter/cstool
+.. image:: https://ci.appveyor.com/api/projects/status/mhu7ua0mapqui6qp/branch/master?svg=true
+    :target: https://ci.appveyor.com/project/slokhorst/cstool-nppcg
 
 Installing
 ==========
