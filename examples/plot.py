@@ -57,7 +57,7 @@ if __name__ == "__main__":
         inel_icdf_dat = dataset_units(infile['inelastic/w0_icdf'])
 
         plt.loglog(inel_energy_dat.to('eV'), inel_cs_dat.to('nm^2'))
-        plt.title('elastic cross-section')
+        plt.title('inelastic cross-section')
         plt.xlabel('$K$ [eV]')
         plt.ylabel('$\sigma$ [m²]')
         plt.show()
