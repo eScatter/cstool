@@ -47,7 +47,7 @@ if __name__ == "__main__":
         plt.loglog(el_energy_dat.to('eV'), el_cs_dat.to('nm^2'))
         plt.title('elastic cross-section')
         plt.xlabel('$K$ [eV]')
-        plt.ylabel('$\sigma$ [m²]')
+        plt.ylabel('$\sigma$ [nm²]')
         plt.show()
 
     if args.inelastic:
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         plt.loglog(inel_energy_dat.to('eV'), inel_cs_dat.to('nm^2'))
         plt.title('inelastic cross-section')
         plt.xlabel('$K$ [eV]')
-        plt.ylabel('$\sigma$ [m²]')
+        plt.ylabel('$\sigma$ [nm²]')
         plt.show()
 
     if args.ionization:
@@ -71,17 +71,17 @@ if __name__ == "__main__":
         for i, K in enumerate(ion_energy_dat):
             shell_p = defaultdict(int)
             for B in ion_icdf_dat[i, :]:
-                if not math.isnan(B.magnitude):
-                    shell_p[B.magnitude] += 1
+                if not math.isnan(B.to('eV').magnitude):
+                    shell_p[B.to('eV').magnitude] += 1
             for B, P in shell_p.items():
                 if B not in shells:
                     shells[B] = {}
-                shells[B][K.magnitude] = P/ion_icdf_dat.shape[1]
+                shells[B][K.to('eV').magnitude] = P/ion_icdf_dat.shape[1]
 
         legends = []
         for B, K_P in shells.items():
             K, P = zip(*K_P.items())
-            legends.append(B)
+            legends.append("$B = {}$ eV".format(B))
             plt.semilogx(K, P)
         plt.legend(legends)
         plt.title('ionization energy probability')
