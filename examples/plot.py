@@ -16,6 +16,8 @@ if __name__ == "__main__":
     parser.add_argument('--elastic', action='store_true')
     parser.add_argument('--inelastic', action='store_true')
     parser.add_argument('--ionization', action='store_true')
+    parser.add_argument('--mfp', action='store_true',
+        help='Plot mean-free-path instead of cross-section.')
     args = parser.parse_args()
 
     infile = h5.File(args.material_file, 'r')
@@ -35,6 +37,9 @@ if __name__ == "__main__":
     if not (args.elastic or args.inelastic or args.ionization):
         print('Not plotting anything. Use the -h flag for usage.')
 
+    if args.mfp:
+        rho = properties['density']
+
     def dataset_units(dataset):
         return np.array(dataset) * units(dataset.attrs['units'])
 
@@ -44,11 +49,18 @@ if __name__ == "__main__":
         el_cs_dat = dataset_units(infile['elastic/cross_section'])
         el_icdf_dat = dataset_units(infile['elastic/angle_icdf'])
 
-        plt.loglog(el_energy_dat.to('eV'), el_cs_dat.to('nm^2'))
-        plt.title('elastic cross-section')
+        plt.figure()
+        if args.mfp:
+            mfp = 1/(rho*el_cs_dat)
+            plt.loglog(el_energy_dat.to('eV'), mfp.to('nm'))
+            plt.title('elastic mean-free-path')
+            plt.ylabel('$\lambda$ [nm]')
+        else:
+            plt.loglog(el_energy_dat.to('eV'), el_cs_dat.to('nm^2'))
+            plt.title('elastic cross-section')
+            plt.ylabel('$\sigma$ [nm²]')
         plt.xlabel('$K$ [eV]')
-        plt.ylabel('$\sigma$ [nm²]')
-        plt.show()
+        plt.show(block=False)
 
     if args.inelastic:
         print('loading inelastic data...')
@@ -56,11 +68,18 @@ if __name__ == "__main__":
         inel_cs_dat = dataset_units(infile['inelastic/cross_section'])
         inel_icdf_dat = dataset_units(infile['inelastic/w0_icdf'])
 
-        plt.loglog(inel_energy_dat.to('eV'), inel_cs_dat.to('nm^2'))
-        plt.title('inelastic cross-section')
+        plt.figure()
+        if args.mfp:
+            mfp = 1/(rho*inel_cs_dat)
+            plt.loglog(inel_energy_dat.to('eV'), mfp.to('nm'))
+            plt.title('inelastic mean-free-path')
+            plt.ylabel('$\lambda$ [nm]')
+        else:
+            plt.loglog(inel_energy_dat.to('eV'), inel_cs_dat.to('nm^2'))
+            plt.title('inelastic cross-section')
+            plt.ylabel('$\sigma$ [nm²]')
         plt.xlabel('$K$ [eV]')
-        plt.ylabel('$\sigma$ [nm²]')
-        plt.show()
+        plt.show(block=False)
 
     if args.ionization:
         print('loading ionization data...')
@@ -78,6 +97,7 @@ if __name__ == "__main__":
                     shells[B] = {}
                 shells[B][K.to('eV').magnitude] = P/ion_icdf_dat.shape[1]
 
+        plt.figure()
         legends = []
         for B, K_P in shells.items():
             K, P = zip(*K_P.items())
@@ -87,6 +107,7 @@ if __name__ == "__main__":
         plt.title('ionization energy probability')
         plt.xlabel('$K$ [eV]')
         plt.ylabel('P')
-        plt.show()
+        plt.show(block=False)
 
+    plt.show()
     infile.close()
