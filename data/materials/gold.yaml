@@ -1,18 +1,32 @@
 name:           gold
-rho_m:          19.30 g/cm³
+rho_m:          19.30 g/cm³           # http://www.webelements.com (also for density,
+                                      # atomic mass values for all elements)
+                                      # also resistivity for gold (2.2 e-8 Ohm m)
 elf_file:       data/elf/df_Au.dat
 
 band_structure:
     model:      metal
-    fermi:      5.53 eV
-    work_func:  5.4 eV
+    fermi:      5.53 eV               # http://hyperphysics.phy-astr.gsu.edu/hbase/hframe.html,
+                                      # quoting Ashcroft, N. W. and Mermin, N.
+                                      # D., Solid State Physics, Saunders, 1976. (5.53 eV)
+                                      # and Ohya et al., report NIFS-DATA-84, Japan. (9.11 eV)
+    work_func:  5.38 eV               # Ohya et al., report NIFS-DATA-84, Japan. (5.38 eV)
 
 phonon:
-    model:      single
-    lattice:    4.079 Å
+    model:      dual
+    lattice:    4.0782 Å              # https://www.webelements.com/gold/crystal_structure.html
+                                      # Landolt-Bornstein: 4.0786 Å
+    m_dos:      1.0 m_e               # Density of state mass [] (unknown in KB)
+    m_eff:      1.0 m_e               # Effective mass (unknown in KB)
     single:
-        c_s:    2.03 km/s
-        eps_ac: 8.92 eV
+        c_s:    1880 m/s             # speed of sound
+        eps_ac: 2.82 eV               # acoustic deformation potential
+    longitudinal:                     # idem dito for longitudinal,
+        c_s:    3240 m/s              # https://en.wikipedia.org/wiki/Speeds_of_sound_of_the_elements_(data_page)
+        eps_ac: 4.86 eV               # calculated
+    transversal:                      # and transversal modes
+        c_s:    1200 m/s              # https://en.wikipedia.org/wiki/Speeds_of_sound_of_the_elements_(data_page)
+        eps_ac: 1.80 eV               # calculated
 
 elements:
     Au: { count: 1, Z: 79, M: 196.97 g/mol }
