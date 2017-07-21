@@ -1,0 +1,55 @@
+name:           alumina                 # http://www.webelements.com (also for density,
+                                        # atomic mass values for all elements)
+rho_m:          3.98 g/cm³              # http://accuratus.com/alumox.html this
+                                        # link shows the density of alumina increases
+                                        # with the purity level
+                                        # http://www.azom.com/properties.aspx?ArticleID=52
+                                        # this link gives a range of densities for alumina
+                                        # from 3 to 3.98 g/cm³
+                                        # http://www-ferp.ucsd.edu/LIB/PROPS/PANOS/al2o3.html
+                                        # this site has a density of 3.9 g/cm³
+                                        # and list a reference: Goodfellow Cambridge Ltd.,
+                                        # "Metals, Alloys, Compounds, Ceramics,
+                                        # Polymers, Composites", Catalogue 1993/94.
+elf_file:       data/elf/df_Al2O3.dat
+
+band_structure:
+    model:      insulator
+    fermi:      0.0 eV                  # E.O. Filatova, A.S. Konashuk,
+                                        # DOI: 10.1021/acs.jpcc.5b06843 J.Phys.
+                                        # Chem.C 2015, 119, 20755 − 20761
+                                        # gives the valence band max as
+                                        # 3.64 +- 0.04 eV for am-Al2O3
+    band_gap:   7.0 eV                  # E.O. Filatova, A.S. Konashuk,
+                                        # DOI: 10.1021/acs.jpcc.5b06843 J.Phys.
+                                        # Chem.C 2015, 119, 20755 − 20761
+                                        # gives the band gap as
+                                        # 7.0 +- 0.1 eV for am-Al2O3
+                                        # and 7.6 +- 0.1 eV for gamma-Al2O3
+    affinity:   1.0 eV                  # (unrealistic value?) D.V. Morgan et al.,
+                                        # J.Phys.D 13, 307 (1980).
+
+phonon:
+    model:      single                  # dual parameters for ac. def. potentail are yet unknown
+    lattice:    4.76 Å                  # http://www.ceramics.nist.gov (does not work anymore)
+                                        # https://srdata.nist.gov/CeramicDataPortal/Pds/Scdaos (for sintered alumina)
+                                        # hexagonal: a = 4.761 Å and c = 12.991 Å
+                                        # Landolt-Bornstein: 5.140 Å and alpha = 55”16’
+    m_dos:      1.0 m_e                 # Density of state mass [] (unknown in KB)
+    m_eff:      1.0 m_e                 # Effective mass (unknown in KB)
+    single:
+        c_s:    8009 m/s                # http://www.ceramics.nist.gov (does not work anymore)
+                                        # https://srdata.nist.gov/CeramicDataPortal/Pds/Scdaos (for sintered alumina)
+        eps_ac: 13.0 eV                 # J. Shan et al., Phys.Rev.Lett. 90(24),
+                                        # 247401 (2003), using model of L.P.
+                                        # Kadanoff, Phys.Rev. 130, 1364 (1963).
+    longitudinal:                       # idem dito for longitudinal,
+        c_s:    11003 m/s               # https://srdata.nist.gov/CeramicDataPortal/Pds/Scdaos (for sintered alumina)
+        eps_ac: 6.39 eV                 # value from silicon
+    transversal:                        # and transversal modes
+        c_s:    6512 m/s                # https://srdata.nist.gov/CeramicDataPortal/Pds/Scdaos (for sintered alumina)
+        eps_ac: 3.01 eV                 # value from silicon
+
+elements:
+    Al: { count: 2, Z: 13, M: 26.982 g/mol }
+    O:  { count: 3, Z:  8, M: 15.999 g/mol }
