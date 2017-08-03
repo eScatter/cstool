@@ -42,6 +42,7 @@ phonon:
                                         # Smirnov (zie link hierboven): 9033 m/s
         eps_ac: 11.0 eV                 #
                                         # Smirnov (zie link hierboven): 11.0 eV
+                                        # see also http://onlinelibrary.wiley.com/doi/10.1002/pssb.2220430167/pdf
     transversal:                        # and transversal modes
         alpha:  2.26e-7 m²/s
         c_s:    5410 m/s                #
