@@ -103,7 +103,7 @@ def phonon_crosssection(M, rho_m, eps_ac, c_s, alpha,
             lambda E: 1, partial(dcs_hi, m),
             h, E_BZ / 4, E_BZ)
 
-        return g(E) * norm(m, E)
+        return g(E) * norm(m, E) * 3.0
 
     # should have units of m²/sr
     return dcs
