@@ -22,7 +22,7 @@ phonon:
     m_eff:      0.26 m_e                # Effective mass
                                         # https://ecee.colorado.edu/~bart/book/effmass.htm
     single:
-        c_s:    6618 m/s                # S. Smirnov, dissertation at TU Wien,
+        c_s:    6938 m/s                # S. Smirnov, dissertation at TU Wien,
                                         # http://www.iue.tuwien.ac.at/phd/smirnov/
                                         # and e.g. M.M. Dignam and A.A. Grinberg,
                                         # Phys.Rev.B 50(7), 4345 (1994); J.A.
@@ -31,23 +31,23 @@ phonon:
                                         # A. Majorana, arXiv preprint
                                         # arXiv:cond-mat/0003456v1. None includes
                                         # a reference to the original data.
-        eps_ac: 8.47 eV                 # S. Smirnov, dissertation at TU Wien,
+        eps_ac: 6.4 eV                 # S. Smirnov, dissertation at TU Wien,
                                         # http://www.iue.tuwien.ac.at/phd/smirnov/
                                         # and Several volumes in Landolt-Börnstein,
                                         # book series, Group III Condensed Matter,
                                         # Springer-Verlag.
     longitudinal:                       # idem dito for longitudinal,
         alpha:  2.00e-7 m²/s
-        c_s:    9033 m/s                #
+        c_s:    9130 m/s                # Landolt-Bornstein Vol. III/41A1a 872
                                         # Smirnov (zie link hierboven): 9033 m/s
-        eps_ac: 11.0 eV                 #
+        eps_ac: 9.2 eV                  # Landolt-Bornstein Vol. III/41A1a 648
                                         # Smirnov (zie link hierboven): 11.0 eV
                                         # see also http://onlinelibrary.wiley.com/doi/10.1002/pssb.2220430167/pdf
     transversal:                        # and transversal modes
         alpha:  2.26e-7 m²/s
-        c_s:    5410 m/s                #
+        c_s:    5842 m/s                # Landolt-Bornstein Vol. III/41A1a 872
                                         # Smirnov (zie link hierboven): 5410 m/s
-        eps_ac: 7.2 eV                 #
+        eps_ac: 5.0 eV                  # Landolt-Bornstein Vol. III/41A1a 648
                                         # Smirnov (zie link hierboven): 7.2 eV
 
 elements:
