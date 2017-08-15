@@ -16,7 +16,7 @@ phonon:
     lattice:    5.430710 Å              # Several volumes in Landolt-Börnstein,
                                         # book series, Group III Condensed Matter,
                                         # Springer-Verlag. (5.43072 Å)
-    m_dos:      1.09 m_e                # Density of state mass []
+    m_dos:      1.08 m_e                # Density of state mass []
                                         # https://ecee.colorado.edu/~bart/book/effmass.htm
                                         # http://onlinelibrary.wiley.com/doi/10.1002/9780470769522.app2/pdf
     m_eff:      0.26 m_e                # Effective mass
