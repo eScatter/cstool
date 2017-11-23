@@ -8,7 +8,7 @@ import json
 
 from urllib.request import urlopen
 from hashlib import sha1
-from pkg_resources import resource_string
+from pkg_resources import resource_string, resource_filename
 
 
 def loglog_interpolate(x_i, y_i):
@@ -40,9 +40,10 @@ def loglog_interpolate(x_i, y_i):
 
 def obtain_endf_files():
     sources = json.loads(resource_string(__name__, 'data/endf_sources.json').decode("utf-8"))
-    os.makedirs('endf.cache', exist_ok=True)
+    endf_dir = resource_filename(__name__, 'data/endf_data')
+    os.makedirs(endf_dir, exist_ok=True)
     for name, source in sources.items():
-        source['filename'] = 'endf.cache/{}.zip'.format(name)
+        source['filename'] = '{}/{}.zip'.format(endf_dir, name)
 
         if os.path.isfile(source['filename']):
             with open(source['filename'], 'rb') as f:
