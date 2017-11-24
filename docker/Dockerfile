@@ -1,5 +1,7 @@
 FROM debian:9
 
+WORKDIR /tmp
+
 RUN apt-get update && apt-get install --no-install-recommends -y \
 	python3 \
 	python3-pip \
@@ -11,31 +13,25 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 	gfortran
 
 # Get & compile elsepa
-WORKDIR /opt
-
 RUN git clone https://github.com/eScatter/elsepa.git && \
-	cd /opt/elsepa && \
-	make
+	cd elsepa && \
+	make install && \
+	cd .. && \
+	rm -r elsepa
+ENV ELSEPA_DATA /usr/local/share/elsepa/data
 
 # Setup python environment
 RUN pip3 install --upgrade pip
 
 # Get libraries
-RUN git clone http://github.com/eScatter/cslib.git && \
-	cd /opt/cslib && \
-	pip3 install .
-RUN git clone -b no-docker http://github.com/eScatter/pyelsepa.git && \
-	cd /opt/pyelsepa && \
-	pip3 install .
-RUN git clone http://github.com/eScatter/cstool.git && \
-	cd /opt/cstool && \
-	pip3 install .
+RUN pip3 install git+https://github.com/eScatter/cslib.git
+RUN pip3 install git+https://github.com/eScatter/pyelsepa.git@no-docker
+RUN pip3 install git+https://github.com/eScatter/cstool.git
 
 # Get endf data
 RUN python3 -c 'from cstool.ionization import obtain_endf_files; obtain_endf_files();'
 
 # Mount point for scripts, input and output
-RUN mkdir /data
 WORKDIR /data
 VOLUME /data
 
