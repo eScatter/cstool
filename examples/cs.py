@@ -29,7 +29,7 @@ def compute_inelastic_tcs_icdf(dcs, P, K0, K, max_interval):
         return dcs(w)
 
     return compute_tcs_icdf(integrant, K0, K, P,
-        sampling = np.min([100000,
+        sampling = np.max([100000,
             int(np.ceil((K - K0) / max_interval))
             ]))
 
