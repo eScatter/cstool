@@ -154,7 +154,7 @@ if __name__ == "__main__":
     shells = ionization_shells(s)
 
     tcstot_at_K = np.zeros(e_ion.shape) * units('m^2')
-    for shell in reversed(shells):
+    for shell in shells:
         shell['cs_at_K'] = np.zeros(e_ion.shape) * units('m^2')
         margin = 10*units.eV
         i_able = ((e_ion+margin) > shell['B'])
@@ -164,7 +164,7 @@ if __name__ == "__main__":
         tcstot_at_K += shell['cs_at_K']
 
     Pcum_at_K = np.zeros(e_ion.shape)
-    for shell in reversed(shells):
+    for shell in shells:
         shell['P_at_K'] = np.zeros(e_ion.shape)
         i_able = (tcstot_at_K > 0*units('m^2'))
         shell['P_at_K'][i_able] = shell['cs_at_K'][i_able]/tcstot_at_K[i_able]
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     for j, P in enumerate(p_ion):
         icdf_at_P = np.ndarray(e_ion.shape) * units.eV
         icdf_at_P[:] = np.nan
-        for shell in shells:
+        for shell in reversed(shells):
             icdf_at_P[P <= shell['Pcum_at_K']] = shell['B']
         icdf_at_P[e_ion < 100*units.eV] = np.nan
         icdf_at_P[icdf_at_P < 50*units.eV] = np.nan

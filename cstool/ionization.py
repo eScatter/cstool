@@ -75,17 +75,20 @@ def _ionization_shells(Z):
                           int(Z))
 
 
+# Cross sections are premultiplied by their element's abundance and
+# sorted from outer (low binding energy) to inner (high binding).
 def ionization_shells(s: Settings):
     shells = []
     for element_name, element in s.elements.items():
         data = _ionization_shells(element.Z)
-        for n, shell in sorted(data.items()):
+        for n, shell in data.items():
             K, cs = list(map(list, zip(*shell.cs.data)))
             B = shell.energy
             K = np.array(K)*units.eV
             cs = np.array(cs)*units.barn
             cs *= element.count
             shells.append({'B': B, 'K': K, 'cs': cs})
+    shells.sort(key = lambda s : s['B']);
     return shells
 
 
