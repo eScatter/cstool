@@ -1,5 +1,5 @@
-from noodles.run.run_with_prov import run_parallel_opt
-from noodles.display import NCDisplay
+from noodles.run.threading.sqlite3 import run_parallel
+from noodles.display import DumbDisplay
 
 from cstool.parse_input import read_input, pprint_settings, cstool_model
 from cstool.mott import s_mott_cs
@@ -59,10 +59,9 @@ if __name__ == "__main__":
     e_mcs = np.logspace(1, 5, 145) * units.eV
     f_mcs = s_mott_cs(s, e_mcs, split=12, mabs=False)
 
-    with NCDisplay() as display:
-        mcs = run_parallel_opt(
-            f_mcs, n_threads=4, registry=registry,
-            jobdb_file='cache.json', display=display)
+    # with DumbDisplay() as display:
+    mcs = run_parallel(
+        f_mcs, n_threads=4, registry=registry, db_file='cache.db', echo_log=True)
 
     print("# Merging elastic scattering processes.")
 
