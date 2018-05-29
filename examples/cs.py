@@ -6,6 +6,7 @@ from cstool.mott import s_mott_cs
 from cstool.phonon import phonon_cs_fn
 from cstool.inelastic import inelastic_cs_fn
 from cstool.compile import compute_tcs_icdf
+from cstool.compile import compute_tcs
 from cstool.ionization import ionization_shells, outer_shell_energies, \
                               loglog_interpolate as ion_loglog_interp
 from cslib.noodles import registry
@@ -23,6 +24,12 @@ def compute_elastic_tcs_icdf(dcs, P):
 
     return compute_tcs_icdf(integrant, 0*units('rad'), np.pi*units('rad'), P)
 
+def compute_elastic_tcs(dcs, P):
+    def integrant(theta):
+        return dcs(theta) * 2 * np.pi * np.sin(theta)
+
+    return compute_tcs(integrant, 0*units('rad'), np.pi*units('rad'), P)
+
 
 def compute_inelastic_tcs_icdf(dcs, P, K0, K, max_interval):
     def integrant(w):
@@ -30,6 +37,15 @@ def compute_inelastic_tcs_icdf(dcs, P, K0, K, max_interval):
 
     return compute_tcs_icdf(integrant, K0, K, P,
         sampling = np.max([100000,
+            int(np.ceil((K - K0) / max_interval))
+            ]))
+
+def compute_inelastic_tcs(dcs, P, K0, K, max_interval):
+    def integrant(w):
+        return dcs(w)
+
+    return compute_tcs(integrant, K0, K, P,
+        sampling = np.min([100000,
             int(np.ceil((K - K0) / max_interval))
             ]))
 
@@ -192,5 +208,75 @@ if __name__ == "__main__":
 
     ionization_osi = ionization_grp.create_dataset("outer_shells", data=s.elf_file.get_outer_shells().to('eV'))
     ionization_osi.attrs['units'] = 'eV'
+
+    # electron range
+    e_ran = np.logspace(-2, 3, 129) * units.eV
+    p_ran = np.linspace(0.0, 1.0, 1024)
+
+    electron_range_grp = outfile.create_group("electron_range")
+    ran_energies = electron_range_grp.create_dataset("energy", data=e_ran.to('eV'))
+    ran_energies.attrs['units'] = 'eV'
+    ran_range = electron_range_grp.create_dataset("range", e_ran.shape)
+    ran_range.attrs['units'] = 'm'
+
+    ran_tmfp = np.zeros(e_ran.shape) * units.m;
+    tmfpmax = 0. * units.m
+    print("# Computing transport mean free path.")
+    for i, K in enumerate(e_ran):
+        def dcs(theta):
+            return elastic_cs_fn(theta, K) * (1 - np.cos(theta)) * s.rho_n
+        inv_tmfp = compute_elastic_tcs(dcs, p_ran)
+        tmfp = 1./inv_tmfp
+        if ( K >= s.band_structure.barrier):
+            # make sure the tmfp is monotonously increasing for energies above
+            # the vacuum potential barrier
+            if (tmfp < tmfpmax):
+                tmfp = tmfpmax
+            else:
+                tmfpmax = tmfp
+        else:
+            tmfpmax = tmfp
+        ran_tmfp[i] = tmfp
+        print('.', end='', flush=True)
+    print()
+
+    rangemax = 0. * units.m
+    tmprange = np.zeros(e_ran.shape) * units.m
+    print("# Computing inelastic electron range.")
+    for i, K in enumerate(e_ran):
+        ran_energies[i] = K.to('eV')
+        if (K < s.band_structure.barrier):
+            ran_range[i] = 0. * units.m
+        else:
+            w0_max = K-s.band_structure.fermi # it is not possible to lose so
+            # much energy that the primary electron ends up below the Fermi
+            # level in an inelastic scattering event
+
+            def dcs(w):
+                return inelastic_cs_fn(s)(K, w) * s.rho_n
+            tcs = compute_inelastic_tcs(dcs, p_inel,
+                s.elf_file.get_min_energy(), w0_max,
+                s.elf_file.get_min_energy_interval())
+            tmprange[i] = 1/tcs
+            for j, omega in enumerate(e_ran):
+                if (omega < K/2 and omega < K-s.band_structure.fermi):
+                    if j==0:
+                        omega_old = 0. * units.eV
+                    else:
+                        omega_old = e_ran[j-1]
+                    cdcsvalue = inelastic_cs_fn(s)(K,omega) * s.rho_n * (omega - omega_old)
+                    index = sum(e_ran <= (K - omega)) - 1 # get last energy index smaller
+                    # than the energy remaining after one energy loss event
+                    tmprange[i] += tmprange[index] * cdcsvalue / tcs
+                else:
+                    break
+            rangevalue = tmprange[i]
+            if (2 * ran_tmfp[i] < tmprange[i]):
+                rangevalue = np.sqrt(2 * ran_tmfp[i] * tmprange[i])
+            if (rangevalue > rangemax):
+                rangemax = rangevalue
+            ran_range[i] = rangemax.to('m')
+        print('.', end='', flush=True)
+    print()
 
     outfile.close()
